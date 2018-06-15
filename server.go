@@ -26,6 +26,7 @@ var (
 
 func main() {
 	http.HandleFunc("/api/heroes", heros)
+	log.Println("Start Server: http://localhost:8081")
 	log.Fatalln(http.ListenAndServe(":8081", nil))
 }
 
