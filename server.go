@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strconv"
+	"io/ioutil"
+	"errors"
 	"github.com/gorilla/mux"
 )
 
@@ -33,6 +34,7 @@ func main() {
 
 	router.HandleFunc("/api/heroes", heros)
 	router.HandleFunc("/api/heroes/{id:[0-9]+}", getHeroById)
+	router.HandleFunc("/api/heroes", heros)
 
 	http.Handle("/", router)
 
@@ -41,7 +43,20 @@ func main() {
 }
 
 func heros(w http.ResponseWriter, r *http.Request) {
+
+	switch r.Method {
+		case "GET":
+			loadHeroes(w)
+		case "OPTIONS":
+			handlePreflight(w)
+		case "PUT":
+			updateHero(w, r)
+	}
+}
+
+func loadHeroes(w http.ResponseWriter) {
 	b, err := json.Marshal(Heroes)
+
 	if err != nil {
 		fmt.Fprintf(w, "Err by marshal heros: %v", err)
 		return
@@ -49,21 +64,30 @@ func heros(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-
+	
 	fmt.Fprintln(w, string(b))
+}
+
+func handlePreflight(w http.ResponseWriter) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	fmt.Fprintf(w, string(http.StatusOK))
 }
 
 func getHeroById(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	varId := vars["id"]  
-	i, err := strconv.Atoi(varId)
+
+	i, err := getIndex(varId)
 
 	if err != nil {
-		fmt.Fprintf(w, "Err during string convert: %v", err)
+		fmt.Fprintf(w, "Err by getIndex ", err)
 		return
 	}
 
-	b, err := json.Marshal(Heroes[i-1]);
+	b, err := json.Marshal(Heroes[i]);
 
 	if err != nil {
 		fmt.Fprintf(w, "Err by marshal hero: %v", err)
@@ -76,43 +100,48 @@ func getHeroById(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, string(b))
 }
 
-/* func updateHero(w http.ResponseWriter, r *http.Request) {
-	idString := r.URL.Path[len("/api/heroes/"):]
-	i, err := strconv.Atoi(idString)
+func updateHero(w http.ResponseWriter, r *http.Request) {
+	//read transfered data
+	body, err := ioutil.ReadAll(r.Body)
+	
+	if err != nil {
+        fmt.Fprintf(w, "can't read body", err)
+        return
+	}
+	
+	//convert to Hero
+	var hero Hero
+	err = json.Unmarshal(body, &hero)
 
 	if err != nil {
-		fmt.Fprintf(w, "Err during string converge: %v", err)
+		fmt.Fprintf(w, "Err by unmarshal hero: %v", err)
 		return
 	}
 
-	if r.Method == "PUT" {
-		fmt.Fprintf(w, "method PUT")
-		fmt.Fprintf(w, string(r.Body))
-	}
-
-
-	b, err := json.Marshal(Heroes[i-1]);
-
-	// vars := mux.Vars(r)
-	// varId := vars["id"]  
-	// i, err := strconv.Atoi(varId)
-
-	// if err != nil {
-	// 	fmt.Fprintf(w, "Err during string convert: %v", err)
-	// 	return
-	// }
-
-	//b, err := json.Marshal(Heroes[i-1]);
+	//update Hero in List
+	i, err := getIndex(hero.ID)
 
 	if err != nil {
-		fmt.Fprintf(w, "Err by marshal hero: %v", err)
+		fmt.Fprintf(w, "Err by getIndex ", err)
 		return
 	}
+
+	Heroes[i] = hero;
 
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
 
-	fmt.Fprintf(w, string(b))
-} */
+	fmt.Fprintf(w, "")
+} 
+
+//don't know if the ids are really the same as the indices in the future!
+func getIndex(id string) (int, error) {
+	for index, h := range Heroes {
+		if (h.ID == id) {
+			return index, nil;
+		}
+	}	
+	return 0, errors.New("No matching id found for "+id)
+}
 
 
