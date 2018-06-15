@@ -48,7 +48,7 @@ func heros(w http.ResponseWriter, r *http.Request) {
 		case "GET":
 			loadHeroes(w)
 		case "OPTIONS":
-			handlePreflight(w)
+			writeToClient(w, string(http.StatusOK))
 		case "PUT":
 			updateHero(w, r)
 	}
@@ -62,18 +62,7 @@ func loadHeroes(w http.ResponseWriter) {
 		return
 	}
 
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-	
-	fmt.Fprintln(w, string(b))
-}
-
-func handlePreflight(w http.ResponseWriter) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-
-	fmt.Fprintf(w, string(http.StatusOK))
+	writeToClient(w, string(b))
 }
 
 func getHeroById(w http.ResponseWriter, r *http.Request) {
@@ -94,10 +83,7 @@ func getHeroById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-
-	fmt.Fprintf(w, string(b))
+	writeToClient(w, string(b))
 }
 
 func updateHero(w http.ResponseWriter, r *http.Request) {
@@ -128,10 +114,7 @@ func updateHero(w http.ResponseWriter, r *http.Request) {
 
 	Heroes[i] = hero;
 
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-
-	fmt.Fprintf(w, "")
+	writeToClient(w, "")
 } 
 
 //don't know if the ids are really the same as the indices in the future!
@@ -142,6 +125,14 @@ func getIndex(id string) (int, error) {
 		}
 	}	
 	return 0, errors.New("No matching id found for "+id)
+}
+
+func writeToClient(w http.ResponseWriter, s string) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	fmt.Fprintf(w, s)
 }
 
 
