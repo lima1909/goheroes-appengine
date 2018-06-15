@@ -1,0 +1,13 @@
+# env: flex
+# runtime: go
+# https://cloud.google.com/appengine/docs/standard/go/config/appref
+
+# https://goheros-207118.appspot.com
+
+runtime: go
+api_version: go1
+
+handlers:
+- url: /.*
+  script: _go_app
+
