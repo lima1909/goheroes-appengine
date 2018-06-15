@@ -6,7 +6,7 @@ import (
 	"log"
 	"net/http"
 	"io/ioutil"
-	"errors"
+	"strconv"
 	"github.com/gorilla/mux"
 )
 
@@ -51,6 +51,8 @@ func heros(w http.ResponseWriter, r *http.Request) {
 			writeToClient(w, string(http.StatusOK))
 		case "PUT":
 			updateHero(w, r)
+		case "POST":
+			addHero(w, r)
 	}
 }
 
@@ -68,15 +70,14 @@ func loadHeroes(w http.ResponseWriter) {
 func getHeroById(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	varId := vars["id"]  
-
-	i, err := getIndex(varId)
+	i, err := strconv.Atoi(varId)
 
 	if err != nil {
-		fmt.Fprintf(w, "Err by getIndex ", err)
+		fmt.Fprintf(w, "Err during string convert: %v", err)
 		return
 	}
 
-	b, err := json.Marshal(Heroes[i]);
+	b, err := json.Marshal(Heroes[i-1]);
 
 	if err != nil {
 		fmt.Fprintf(w, "Err by marshal hero: %v", err)
@@ -87,12 +88,54 @@ func getHeroById(w http.ResponseWriter, r *http.Request) {
 }
 
 func updateHero(w http.ResponseWriter, r *http.Request) {
+	hero, err := getHeroFromRequest(r, w)
+
+	if err != nil {
+		fmt.Fprintf(w, "Err by getHeroFromRequest ", err)
+		return
+	}
+
+	i, err := strconv.Atoi(hero.ID)
+
+	if err != nil {
+		fmt.Fprintf(w, "Err during string convert: %v", err)
+		return
+	}
+
+	//update Hero in List
+	Heroes[i-1] = hero;
+
+	writeToClient(w, "")
+} 
+
+func addHero(w http.ResponseWriter, r *http.Request) {
+	hero, err := getHeroFromRequest(r, w)
+
+	if err != nil {
+		fmt.Fprintf(w, "Err by getHeroFromRequest ", err)
+		return
+	}
+
+	newHero := Hero{ID : strconv.Itoa(len(Heroes)+1), Name : hero.Name}
+
+	Heroes = append(Heroes, newHero)
+
+	b, err := json.Marshal(newHero);
+
+	if err != nil {
+		fmt.Fprintf(w, "Err by marshal hero: %v", err)
+		return
+	}
+
+	writeToClient(w, string(b))
+} 
+
+func getHeroFromRequest(r *http.Request, w http.ResponseWriter) (Hero, error) {
 	//read transfered data
 	body, err := ioutil.ReadAll(r.Body)
 	
 	if err != nil {
-        fmt.Fprintf(w, "can't read body", err)
-        return
+        return Hero{ ID: "", Name: "" }, err
 	}
 	
 	//convert to Hero
@@ -100,31 +143,10 @@ func updateHero(w http.ResponseWriter, r *http.Request) {
 	err = json.Unmarshal(body, &hero)
 
 	if err != nil {
-		fmt.Fprintf(w, "Err by unmarshal hero: %v", err)
-		return
+		return Hero{ ID: "", Name: "" }, err
 	}
 
-	//update Hero in List
-	i, err := getIndex(hero.ID)
-
-	if err != nil {
-		fmt.Fprintf(w, "Err by getIndex ", err)
-		return
-	}
-
-	Heroes[i] = hero;
-
-	writeToClient(w, "")
-} 
-
-//don't know if the ids are really the same as the indices in the future!
-func getIndex(id string) (int, error) {
-	for index, h := range Heroes {
-		if (h.ID == id) {
-			return index, nil;
-		}
-	}	
-	return 0, errors.New("No matching id found for "+id)
+	return hero, nil
 }
 
 func writeToClient(w http.ResponseWriter, s string) {
