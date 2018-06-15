@@ -21,6 +21,8 @@ var (
 		Hero{"3", "Alex M"},
 		Hero{"4", "Adam O"},
 		Hero{"5", "Shauna C"},
+		Hero{"6", "Lena H"},
+		Hero{"7", "Chris S"},
 	}
 )
 
