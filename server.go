@@ -3,9 +3,11 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"strconv"
+
 	"github.com/gorilla/mux"
 )
 
@@ -32,7 +34,7 @@ func main() {
 	router := mux.NewRouter()
 
 	router.HandleFunc("/api/heroes", heros)
-	router.HandleFunc("/api/heroes/{id:[0-9]+}", getHeroById)
+	router.HandleFunc("/api/heroes/{id:[0-9]+}", getHeroByID)
 
 	http.Handle("/", router)
 
@@ -41,78 +43,117 @@ func main() {
 }
 
 func heros(w http.ResponseWriter, r *http.Request) {
+
+	switch r.Method {
+	case "GET":
+		loadHeroes(w)
+	case "OPTIONS":
+		writeToClient(w, string(http.StatusOK))
+	case "PUT":
+		updateHero(w, r)
+	case "POST":
+		addHero(w, r)
+	}
+}
+
+func loadHeroes(w http.ResponseWriter) {
 	b, err := json.Marshal(Heroes)
+
 	if err != nil {
 		fmt.Fprintf(w, "Err by marshal heros: %v", err)
 		return
 	}
 
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-
-	fmt.Fprintln(w, string(b))
+	writeToClient(w, string(b))
 }
 
-func getHeroById(w http.ResponseWriter, r *http.Request) {
+func getHeroByID(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	varId := vars["id"]  
-	i, err := strconv.Atoi(varId)
+	varID := vars["id"]
+	i, err := strconv.Atoi(varID)
 
 	if err != nil {
 		fmt.Fprintf(w, "Err during string convert: %v", err)
 		return
 	}
 
-	b, err := json.Marshal(Heroes[i-1]);
+	b, err := json.Marshal(Heroes[i-1])
 
 	if err != nil {
 		fmt.Fprintf(w, "Err by marshal hero: %v", err)
 		return
 	}
 
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-
-	fmt.Fprintf(w, string(b))
+	writeToClient(w, string(b))
 }
 
-/* func updateHero(w http.ResponseWriter, r *http.Request) {
-	idString := r.URL.Path[len("/api/heroes/"):]
-	i, err := strconv.Atoi(idString)
+func updateHero(w http.ResponseWriter, r *http.Request) {
+	hero, err := getHeroFromRequest(r, w)
 
 	if err != nil {
-		fmt.Fprintf(w, "Err during string converge: %v", err)
+		fmt.Fprintf(w, "Err by getHeroFromRequest %v", err)
 		return
 	}
 
-	if r.Method == "PUT" {
-		fmt.Fprintf(w, "method PUT")
-		fmt.Fprintf(w, string(r.Body))
+	i, err := strconv.Atoi(hero.ID)
+
+	if err != nil {
+		fmt.Fprintf(w, "Err during string convert: %v", err)
+		return
 	}
 
+	//update Hero in List
+	Heroes[i-1] = hero
 
-	b, err := json.Marshal(Heroes[i-1]);
+	writeToClient(w, "")
+}
 
-	// vars := mux.Vars(r)
-	// varId := vars["id"]  
-	// i, err := strconv.Atoi(varId)
+func addHero(w http.ResponseWriter, r *http.Request) {
+	hero, err := getHeroFromRequest(r, w)
 
-	// if err != nil {
-	// 	fmt.Fprintf(w, "Err during string convert: %v", err)
-	// 	return
-	// }
+	if err != nil {
+		fmt.Fprintf(w, "Err by getHeroFromRequest %v", err)
+		return
+	}
 
-	//b, err := json.Marshal(Heroes[i-1]);
+	hero.ID = strconv.Itoa(len(Heroes) + 1)
+
+	Heroes = append(Heroes, hero)
+
+	b, err := json.Marshal(hero)
 
 	if err != nil {
 		fmt.Fprintf(w, "Err by marshal hero: %v", err)
 		return
 	}
 
+	writeToClient(w, string(b))
+}
+
+func getHeroFromRequest(r *http.Request, w http.ResponseWriter) (Hero, error) {
+	//read transfered data
+	body, err := ioutil.ReadAll(r.Body)
+	defer r.Body.Close()
+
+	if err != nil {
+		return Hero{}, err
+	}
+
+	//convert to Hero
+	var hero Hero
+	err = json.Unmarshal(body, &hero)
+
+	if err != nil {
+		return Hero{}, err
+	}
+
+	return hero, nil
+}
+
+func writeToClient(w http.ResponseWriter, s string) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 
-	fmt.Fprintf(w, string(b))
-} */
-
-
+	fmt.Fprintf(w, s)
+}
