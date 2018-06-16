@@ -34,8 +34,7 @@ func main() {
 	router := mux.NewRouter()
 
 	router.HandleFunc("/api/heroes", heros)
-	router.HandleFunc("/api/heroes/{id:[0-9]+}", getHeroById)
-	router.HandleFunc("/api/heroes", heros)
+	router.HandleFunc("/api/heroes/{id:[0-9]+}", getHeroByID)
 
 	http.Handle("/", router)
 
@@ -68,10 +67,10 @@ func loadHeroes(w http.ResponseWriter) {
 	writeToClient(w, string(b))
 }
 
-func getHeroById(w http.ResponseWriter, r *http.Request) {
+func getHeroByID(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	varId := vars["id"]
-	i, err := strconv.Atoi(varId)
+	varID := vars["id"]
+	i, err := strconv.Atoi(varID)
 
 	if err != nil {
 		fmt.Fprintf(w, "Err during string convert: %v", err)
@@ -92,7 +91,7 @@ func updateHero(w http.ResponseWriter, r *http.Request) {
 	hero, err := getHeroFromRequest(r, w)
 
 	if err != nil {
-		fmt.Fprintf(w, "Err by getHeroFromRequest ", err)
+		fmt.Fprintf(w, "Err by getHeroFromRequest %v", err)
 		return
 	}
 
@@ -113,15 +112,15 @@ func addHero(w http.ResponseWriter, r *http.Request) {
 	hero, err := getHeroFromRequest(r, w)
 
 	if err != nil {
-		fmt.Fprintf(w, "Err by getHeroFromRequest ", err)
+		fmt.Fprintf(w, "Err by getHeroFromRequest %v", err)
 		return
 	}
 
-	newHero := Hero{ID: strconv.Itoa(len(Heroes) + 1), Name: hero.Name}
+	hero.ID = strconv.Itoa(len(Heroes) + 1)
 
-	Heroes = append(Heroes, newHero)
+	Heroes = append(Heroes, hero)
 
-	b, err := json.Marshal(newHero)
+	b, err := json.Marshal(hero)
 
 	if err != nil {
 		fmt.Fprintf(w, "Err by marshal hero: %v", err)
@@ -134,9 +133,10 @@ func addHero(w http.ResponseWriter, r *http.Request) {
 func getHeroFromRequest(r *http.Request, w http.ResponseWriter) (Hero, error) {
 	//read transfered data
 	body, err := ioutil.ReadAll(r.Body)
+	defer r.Body.Close()
 
 	if err != nil {
-		return Hero{ID: "", Name: ""}, err
+		return Hero{}, err
 	}
 
 	//convert to Hero
@@ -144,7 +144,7 @@ func getHeroFromRequest(r *http.Request, w http.ResponseWriter) (Hero, error) {
 	err = json.Unmarshal(body, &hero)
 
 	if err != nil {
-		return Hero{ID: "", Name: ""}, err
+		return Hero{}, err
 	}
 
 	return hero, nil
