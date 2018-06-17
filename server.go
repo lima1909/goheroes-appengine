@@ -33,8 +33,8 @@ var (
 func main() {
 	router := mux.NewRouter()
 
-	router.HandleFunc("/api/heroes", heros)
-	router.HandleFunc("/api/heroes/{id:[0-9]+}", getHeroByID)
+	router.HandleFunc("/api/heroes", heroes)
+	router.HandleFunc("/api/heroes/{id:[0-9]+}", heroesID)
 
 	http.Handle("/", router)
 
@@ -42,7 +42,7 @@ func main() {
 	log.Fatalln(http.ListenAndServe(":8081", nil))
 }
 
-func heros(w http.ResponseWriter, r *http.Request) {
+func heroes(w http.ResponseWriter, r *http.Request) {
 	setHeaderOptions(w)
 
 	switch r.Method {
@@ -57,11 +57,24 @@ func heros(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func heroesID(w http.ResponseWriter, r *http.Request) {
+	setHeaderOptions(w)
+
+	switch r.Method {
+	case "GET":
+		getHeroByID(w, r)
+	case "OPTIONS":
+		fmt.Fprintf(w, string(http.StatusOK))
+	case "DELETE":
+		deleteHero(w, r)
+	}
+}
+
 func loadHeroes(w http.ResponseWriter) {
 	b, err := json.Marshal(Heroes)
 
 	if err != nil {
-		fmt.Fprintf(w, "Err by marshal heros: %v", err)
+		fmt.Fprintf(w, "Err by marshal heroes: %v", err)
 		return
 	}
 
@@ -131,6 +144,27 @@ func addHero(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fmt.Fprintf(w, string(b))
+}
+
+func deleteHero(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	varID := vars["id"]
+	i, err := strconv.Atoi(varID)
+
+	if err != nil {
+		fmt.Fprintf(w, "Err during string convert: %v", err)
+		return
+	}
+
+	//remove hero from list
+	Heroes = append(Heroes[:i-1], Heroes[i:]...)
+
+	//adjust Hero.ID
+	for j := (i - 1); j < len(Heroes); j++ {
+		Heroes[j].ID = strconv.Itoa(j + 1)
+	}
+
+	fmt.Fprintf(w, "")
 }
 
 func getHeroFromRequest(r *http.Request, w http.ResponseWriter) (Hero, error) {
