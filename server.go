@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gorilla/mux"
 )
@@ -34,6 +35,7 @@ func main() {
 	router := mux.NewRouter()
 
 	router.HandleFunc("/api/heroes", heroes)
+	router.HandleFunc("/api/heroes/", searchHeroes)
 	router.HandleFunc("/api/heroes/{id:[0-9]+}", heroesID)
 
 	http.Handle("/", router)
@@ -165,6 +167,36 @@ func deleteHero(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fmt.Fprintf(w, "")
+}
+
+func searchHeroes(w http.ResponseWriter, r *http.Request) {
+	searchString, ok := r.URL.Query()["name"]
+
+	if !ok || len(searchString) < 1 {
+		log.Println("Url Param 'key' is missing")
+		return
+	}
+
+	setHeaderOptions(w)
+
+	findHeroes := []Hero{}
+
+	//compare Hero.Name with searchString
+	for _, hero := range Heroes {
+		if strings.Contains(hero.Name, searchString[0]) {
+			findHeroes = append(findHeroes, hero)
+		}
+	}
+
+	//convert to json
+	b, err := json.Marshal(findHeroes)
+
+	if err != nil {
+		fmt.Fprintf(w, "Err by marshal hero: %v", err)
+		return
+	}
+
+	fmt.Fprintf(w, string(b))
 }
 
 func getHeroFromRequest(r *http.Request, w http.ResponseWriter) (Hero, error) {
