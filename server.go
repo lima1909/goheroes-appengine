@@ -43,12 +43,13 @@ func main() {
 }
 
 func heros(w http.ResponseWriter, r *http.Request) {
+	setHeaderOptions(w)
 
 	switch r.Method {
 	case "GET":
 		loadHeroes(w)
 	case "OPTIONS":
-		writeToClient(w, string(http.StatusOK))
+		fmt.Fprintf(w, string(http.StatusOK))
 	case "PUT":
 		updateHero(w, r)
 	case "POST":
@@ -64,10 +65,12 @@ func loadHeroes(w http.ResponseWriter) {
 		return
 	}
 
-	writeToClient(w, string(b))
+	fmt.Fprintf(w, string(b))
 }
 
 func getHeroByID(w http.ResponseWriter, r *http.Request) {
+	setHeaderOptions(w)
+
 	vars := mux.Vars(r)
 	varID := vars["id"]
 	i, err := strconv.Atoi(varID)
@@ -84,7 +87,7 @@ func getHeroByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeToClient(w, string(b))
+	fmt.Fprintf(w, string(b))
 }
 
 func updateHero(w http.ResponseWriter, r *http.Request) {
@@ -105,7 +108,7 @@ func updateHero(w http.ResponseWriter, r *http.Request) {
 	//update Hero in List
 	Heroes[i-1] = hero
 
-	writeToClient(w, "")
+	fmt.Fprintf(w, "")
 }
 
 func addHero(w http.ResponseWriter, r *http.Request) {
@@ -127,7 +130,7 @@ func addHero(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeToClient(w, string(b))
+	fmt.Fprintf(w, string(b))
 }
 
 func getHeroFromRequest(r *http.Request, w http.ResponseWriter) (Hero, error) {
@@ -150,10 +153,8 @@ func getHeroFromRequest(r *http.Request, w http.ResponseWriter) (Hero, error) {
 	return hero, nil
 }
 
-func writeToClient(w http.ResponseWriter, s string) {
+func setHeaderOptions(w http.ResponseWriter) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-
-	fmt.Fprintf(w, s)
 }
