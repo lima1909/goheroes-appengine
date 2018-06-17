@@ -9,25 +9,20 @@ import (
 	"strconv"
 
 	"github.com/gorilla/mux"
+	"github.com/lima1909/goheroes-appengine/db"
 	"google.golang.org/appengine"
 )
 
-// Hero type
-type Hero struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-}
-
 var (
 	// Heroes list from Hero examples
-	Heroes = []Hero{
-		Hero{"1", "Jasmin"},
-		Hero{"2", "Mario"},
-		Hero{"3", "Alex M"},
-		Hero{"4", "Adam O"},
-		Hero{"5", "Shauna C"},
-		Hero{"6", "Lena H"},
-		Hero{"7", "Chris S"},
+	Heroes = []db.Hero{
+		db.Hero{ID: "1", Name: "Jasmin"},
+		db.Hero{ID: "2", Name: "Mario"},
+		db.Hero{ID: "3", Name: "Alex M"},
+		db.Hero{ID: "4", Name: "Adam O"},
+		db.Hero{ID: "5", Name: "Shauna C"},
+		db.Hero{ID: "6", Name: "Lena H"},
+		db.Hero{ID: "7", Name: "Chris S"},
 	}
 )
 
@@ -35,6 +30,8 @@ func main() {
 	router := mux.NewRouter()
 
 	router.HandleFunc("/api/heroes", heros)
+	router.HandleFunc("/api/heroes/add", addHero)
+
 	router.HandleFunc("/api/heroes/{id:[0-9]+}", getHeroByID)
 
 	http.Handle("/", router)
@@ -44,11 +41,25 @@ func main() {
 	appengine.Main()
 }
 
+func addHero(w http.ResponseWriter, r *http.Request) {
+	h := db.Hero{ID: "99", Name: "Foo"}
+	h, err := db.AddHero(appengine.NewContext(r), h)
+	if err != nil {
+		fmt.Fprintf(w, "%v", err)
+	}
+	fmt.Fprintln(w, toJSON(h))
+}
+
 func heros(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case "GET":
-		loadHeroes(w)
+		// loadHeroes(w)
+		h, err := db.ListHeroes(appengine.NewContext(r))
+		if err != nil {
+			fmt.Fprintf(w, "%v", err)
+		}
+		fmt.Fprintln(w, toJSON(h))
 	case "OPTIONS":
 		writeToClient(w, string(http.StatusOK))
 	case "PUT":
@@ -56,6 +67,16 @@ func heros(w http.ResponseWriter, r *http.Request) {
 	case "POST":
 		addHero(w, r)
 	}
+}
+
+func toJSON(v interface{}) string {
+	b, err := json.Marshal(v)
+
+	if err != nil {
+		return fmt.Sprintf("Err by marshal heros: %v", err)
+	}
+
+	return string(b)
 }
 
 func loadHeroes(w http.ResponseWriter) {
@@ -110,7 +131,7 @@ func updateHero(w http.ResponseWriter, r *http.Request) {
 	writeToClient(w, "")
 }
 
-func addHero(w http.ResponseWriter, r *http.Request) {
+func addHero2(w http.ResponseWriter, r *http.Request) {
 	hero, err := getHeroFromRequest(r, w)
 
 	if err != nil {
@@ -132,21 +153,21 @@ func addHero(w http.ResponseWriter, r *http.Request) {
 	writeToClient(w, string(b))
 }
 
-func getHeroFromRequest(r *http.Request, w http.ResponseWriter) (Hero, error) {
+func getHeroFromRequest(r *http.Request, w http.ResponseWriter) (db.Hero, error) {
 	//read transfered data
 	body, err := ioutil.ReadAll(r.Body)
 	defer r.Body.Close()
 
 	if err != nil {
-		return Hero{}, err
+		return db.Hero{}, err
 	}
 
 	//convert to Hero
-	var hero Hero
+	var hero db.Hero
 	err = json.Unmarshal(body, &hero)
 
 	if err != nil {
-		return Hero{}, err
+		return db.Hero{}, err
 	}
 
 	return hero, nil
