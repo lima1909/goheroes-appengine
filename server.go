@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gorilla/mux"
 )
@@ -33,8 +34,9 @@ var (
 func main() {
 	router := mux.NewRouter()
 
-	router.HandleFunc("/api/heroes", heros)
-	router.HandleFunc("/api/heroes/{id:[0-9]+}", getHeroByID)
+	router.HandleFunc("/api/heroes", heroes)
+	router.HandleFunc("/api/heroes/", searchHeroes)
+	router.HandleFunc("/api/heroes/{id:[0-9]+}", heroesID)
 
 	http.Handle("/", router)
 
@@ -42,13 +44,14 @@ func main() {
 	log.Fatalln(http.ListenAndServe(":8081", nil))
 }
 
-func heros(w http.ResponseWriter, r *http.Request) {
+func heroes(w http.ResponseWriter, r *http.Request) {
+	setHeaderOptions(w)
 
 	switch r.Method {
 	case "GET":
 		loadHeroes(w)
 	case "OPTIONS":
-		writeToClient(w, string(http.StatusOK))
+		fmt.Fprintf(w, string(http.StatusOK))
 	case "PUT":
 		updateHero(w, r)
 	case "POST":
@@ -56,18 +59,33 @@ func heros(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func heroesID(w http.ResponseWriter, r *http.Request) {
+	setHeaderOptions(w)
+
+	switch r.Method {
+	case "GET":
+		getHeroByID(w, r)
+	case "OPTIONS":
+		fmt.Fprintf(w, string(http.StatusOK))
+	case "DELETE":
+		deleteHero(w, r)
+	}
+}
+
 func loadHeroes(w http.ResponseWriter) {
 	b, err := json.Marshal(Heroes)
 
 	if err != nil {
-		fmt.Fprintf(w, "Err by marshal heros: %v", err)
+		fmt.Fprintf(w, "Err by marshal heroes: %v", err)
 		return
 	}
 
-	writeToClient(w, string(b))
+	fmt.Fprintf(w, string(b))
 }
 
 func getHeroByID(w http.ResponseWriter, r *http.Request) {
+	setHeaderOptions(w)
+
 	vars := mux.Vars(r)
 	varID := vars["id"]
 	i, err := strconv.Atoi(varID)
@@ -84,7 +102,7 @@ func getHeroByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeToClient(w, string(b))
+	fmt.Fprintf(w, string(b))
 }
 
 func updateHero(w http.ResponseWriter, r *http.Request) {
@@ -105,7 +123,7 @@ func updateHero(w http.ResponseWriter, r *http.Request) {
 	//update Hero in List
 	Heroes[i-1] = hero
 
-	writeToClient(w, "")
+	fmt.Fprintf(w, "")
 }
 
 func addHero(w http.ResponseWriter, r *http.Request) {
@@ -127,7 +145,58 @@ func addHero(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeToClient(w, string(b))
+	fmt.Fprintf(w, string(b))
+}
+
+func deleteHero(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	varID := vars["id"]
+	i, err := strconv.Atoi(varID)
+
+	if err != nil {
+		fmt.Fprintf(w, "Err during string convert: %v", err)
+		return
+	}
+
+	//remove hero from list
+	Heroes = append(Heroes[:i-1], Heroes[i:]...)
+
+	//adjust Hero.ID
+	for j := (i - 1); j < len(Heroes); j++ {
+		Heroes[j].ID = strconv.Itoa(j + 1)
+	}
+
+	fmt.Fprintf(w, "")
+}
+
+func searchHeroes(w http.ResponseWriter, r *http.Request) {
+	searchString, ok := r.URL.Query()["name"]
+
+	if !ok || len(searchString) < 1 {
+		log.Println("Url Param 'key' is missing")
+		return
+	}
+
+	setHeaderOptions(w)
+
+	findHeroes := []Hero{}
+
+	//compare Hero.Name with searchString
+	for _, hero := range Heroes {
+		if strings.Contains(hero.Name, searchString[0]) {
+			findHeroes = append(findHeroes, hero)
+		}
+	}
+
+	//convert to json
+	b, err := json.Marshal(findHeroes)
+
+	if err != nil {
+		fmt.Fprintf(w, "Err by marshal hero: %v", err)
+		return
+	}
+
+	fmt.Fprintf(w, string(b))
 }
 
 func getHeroFromRequest(r *http.Request, w http.ResponseWriter) (Hero, error) {
@@ -150,10 +219,8 @@ func getHeroFromRequest(r *http.Request, w http.ResponseWriter) (Hero, error) {
 	return hero, nil
 }
 
-func writeToClient(w http.ResponseWriter, s string) {
+func setHeaderOptions(w http.ResponseWriter) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-
-	fmt.Fprintf(w, s)
 }
