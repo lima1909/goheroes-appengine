@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/lima1909/goheroes-appengine/service"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
+	"google.golang.org/appengine/log"
 )
 
 const (
@@ -15,24 +17,38 @@ const (
 	KIND = "Hero"
 )
 
-// ListHeroes all Heroes, there are saved in datastore
-func ListHeroes(ctx context.Context) ([]Hero, error) {
-	heroes := []Hero{}
-	ctx, err := appengine.Namespace(ctx, NAMESPACE)
+// DataStoreService is a Impl from service.HeroService
+type DataStoreService struct{}
+
+// List all Heroes, there are saved in datastore
+func (DataStoreService) List(c context.Context, name string) ([]service.Hero, error) {
+	heroes := []service.Hero{}
+	c, err := appengine.Namespace(c, NAMESPACE)
 	if err != nil {
 		return heroes, fmt.Errorf("Err by create CTX: %v", err)
 	}
 
-	_, err = datastore.NewQuery(KIND).Order("ID").GetAll(ctx, &heroes)
+	q := datastore.NewQuery(KIND)
+	if name != "" {
+		q = q.Filter("Name = ", name)
+		log.Infof(c, "With Filter: Name=%s", name)
+	}
+
+	keys, err := q.Order("ID").GetAll(c, &heroes)
 	if err != nil {
 		return heroes, fmt.Errorf("Err by datastore.GetAll: %v", err)
+	}
+
+	log.Infof(c, "----- Find %v Keys for Heroes", len(keys))
+	for i, k := range keys {
+		heroes[i].Key = k.IntID()
 	}
 
 	return heroes, nil
 }
 
 // AddHero add a Hero to datastore
-func AddHero(ctx context.Context, h Hero) (Hero, error) {
+func AddHero(ctx context.Context, h service.Hero) (service.Hero, error) {
 	ctx, err := appengine.Namespace(ctx, NAMESPACE)
 	if err != nil {
 		return h, fmt.Errorf("Err by create CTX: %v", err)

@@ -13,6 +13,9 @@ endif
 deploy: 
 	$(GCLOUD_CMD) app deploy -q
 
+logs:
+	$(GCLOUD_CMD) app logs tail
+
 version: 
 	@$(GCLOUD_CMD) app versions list
 

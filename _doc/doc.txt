@@ -1,0 +1,15 @@
+Golang Doc for App Engine:
+	https://cloud.google.com/appengine/docs/standard/go/reference
+	https://github.com/GoogleCloudPlatform/go-endpoints
+
+ Cron:
+	https://cloud.google.com/appengine/docs/standard/go/config/cron
+ Taskqueue:
+	https://cloud.google.com/appengine/docs/standard/go/taskqueue/
+ PubSub:
+ 	https://cloud.google.com/pubsub/docs/overview
+	https://godoc.org/cloud.google.com/go/pubsub
+
+
+ Samples:
+	https://github.com/GoogleCloudPlatform/golang-samples/
