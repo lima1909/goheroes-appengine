@@ -47,6 +47,20 @@ func (m *MemService) Add(c context.Context, h service.Hero) (*service.Hero, erro
 	return &h, nil
 }
 
+// Update an Hero
+func (m *MemService) Update(c context.Context, h service.Hero) (*service.Hero, error) {
+
+	for i, hero := range m.heroes {
+		if hero.ID == h.ID {
+			m.heroes[i] = h
+			log.Printf("update hero from: %v to: %v\n", hero, h)
+			return &m.heroes[i], nil
+		}
+	}
+
+	return nil, service.HeroNotFoundErr
+}
+
 // Delete an Hero
 func (m *MemService) Delete(c context.Context, id int64) error {
 	index := -1

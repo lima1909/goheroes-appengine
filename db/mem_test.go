@@ -94,3 +94,20 @@ func TestAddAndGetAndDelete(t *testing.T) {
 		t.Errorf("%v != %v", len(m.heroes), size)
 	}
 }
+
+func TestUpdate(t *testing.T) {
+	m := NewMemService()
+	h := service.Hero{ID: 7, Name: "Chris S"}
+
+	hu, err := m.Update(context.TODO(), h)
+	if err != nil {
+		t.Errorf("no err expected: %v", err)
+	}
+	if hu.ID != h.ID {
+		t.Errorf("%v != %v", hu.ID, h.ID)
+	}
+	if hu.Name != h.Name {
+		t.Errorf("%v != %v", hu.Name, h.Name)
+	}
+
+}

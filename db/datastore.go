@@ -76,6 +76,24 @@ func (DatastoreService) Add(c context.Context, h service.Hero) (*service.Hero, e
 	return &h, nil
 }
 
+// Update an Hero
+func (ds DatastoreService) Update(c context.Context, h service.Hero) (*service.Hero, error) {
+	c = setNamespace(c)
+
+	hf, err := ds.GetByID(c, h.ID)
+	if err != nil {
+		return nil, fmt.Errorf("Err by datastore.Update (GetByID: %v", err)
+	}
+
+	k := datastore.NewKey(c, KIND, "", hf.Key, nil)
+	_, err = datastore.Put(c, k, h)
+	if err != nil {
+		return nil, fmt.Errorf("Err by datastore.Update: %v", err)
+	}
+
+	return nil, nil
+}
+
 // Delete a Hero from datastore
 func (DatastoreService) Delete(c context.Context, id int64) error {
 	c = setNamespace(c)

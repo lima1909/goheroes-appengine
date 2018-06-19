@@ -59,6 +59,9 @@ func heroes(w http.ResponseWriter, r *http.Request) {
 		heroList(w, r)
 	case "POST":
 		addHero(w, r)
+	case "PUT":
+		updateHero(w, r)
+
 	default:
 		http.Error(w, "invalid method: "+r.Method, http.StatusBadRequest)
 	}
@@ -73,6 +76,7 @@ func heroID(w http.ResponseWriter, r *http.Request) {
 		getHero(w, r)
 	case "DELETE":
 		deleteHero(w, r)
+
 	default:
 		http.Error(w, "invalid method: "+r.Method, http.StatusBadRequest)
 	}
@@ -165,4 +169,29 @@ func deleteHero(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fmt.Fprintf(w, "")
+}
+
+func updateHero(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+
+	hero := service.Hero{}
+	err := json.NewDecoder(r.Body).Decode(&hero)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	h, err := app.Update(appengine.NewContext(r), hero)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	b, err := json.Marshal(h)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Fprintf(w, "%s", string(b))
 }
