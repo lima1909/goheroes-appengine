@@ -17,11 +17,11 @@ const (
 	KIND = "Hero"
 )
 
-// DataStoreService is a Impl from service.HeroService
-type DataStoreService struct{}
+// DatastoreService is a Impl from service.HeroService
+type DatastoreService struct{}
 
 // List all Heroes, there are saved in datastore
-func (DataStoreService) List(c context.Context, name string) ([]service.Hero, error) {
+func (DatastoreService) List(c context.Context, name string) ([]service.Hero, error) {
 	heroes := []service.Hero{}
 	c, err := appengine.Namespace(c, NAMESPACE)
 	if err != nil {
@@ -30,7 +30,7 @@ func (DataStoreService) List(c context.Context, name string) ([]service.Hero, er
 
 	q := datastore.NewQuery(KIND)
 	if name != "" {
-		q = q.Filter("Name = ", name)
+		q = q.Filter("Name =", name)
 		log.Infof(c, "With Filter: Name=%s", name)
 	}
 
@@ -47,18 +47,40 @@ func (DataStoreService) List(c context.Context, name string) ([]service.Hero, er
 	return heroes, nil
 }
 
-// AddHero add a Hero to datastore
-func AddHero(ctx context.Context, h service.Hero) (service.Hero, error) {
-	ctx, err := appengine.Namespace(ctx, NAMESPACE)
+// GetByID get Hero by the ID
+func (DatastoreService) GetByID(c context.Context, id int64) (service.Hero, error) {
+	hero := []service.Hero{}
+	c, err := appengine.Namespace(c, NAMESPACE)
 	if err != nil {
-		return h, fmt.Errorf("Err by create CTX: %v", err)
+		return service.Hero{}, fmt.Errorf("Err by create CTX: %v", err)
 	}
 
-	k := datastore.NewIncompleteKey(ctx, KIND, nil)
-	_, err = datastore.Put(ctx, k, &h)
+	ks, err := datastore.NewQuery(KIND).Filter("ID =", id).GetAll(c, &hero)
 	if err != nil {
-		return h, fmt.Errorf("Err by datastore.Put: %v", err)
+		return service.Hero{}, fmt.Errorf("No Hero with ID: %v found in datastore: %v", id, err)
 	}
 
-	return h, nil
+	if len(hero) > 0 {
+		hero[0].Key = ks[0].IntID()
+		return hero[0], nil
+	}
+	return service.Hero{}, service.HeroNotFoundErr
+}
+
+// Add add a Hero to datastore
+func (DatastoreService) Add(c context.Context, h service.Hero) (service.Hero, error) {
+	hero := service.Hero{}
+	c, err := appengine.Namespace(c, NAMESPACE)
+	if err != nil {
+		return hero, fmt.Errorf("Err by create CTX: %v", err)
+	}
+
+	k := datastore.NewIncompleteKey(c, KIND, nil)
+	k, err = datastore.Put(c, k, &h)
+	if err != nil {
+		return hero, fmt.Errorf("Err by datastore.Put: %v", err)
+	}
+
+	hero.Key = k.IntID()
+	return hero, nil
 }
