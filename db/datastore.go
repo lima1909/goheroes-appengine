@@ -88,12 +88,13 @@ func (ds DatastoreService) Update(c context.Context, h service.Hero) (*service.H
 	}
 
 	k := datastore.NewKey(c, KIND, "", hf.Key, nil)
-	_, err = datastore.Put(c, k, h)
+	_, err = datastore.Put(c, k, &h)
 	if err != nil {
-		return nil, fmt.Errorf("Err by datastore.Update: %v", err)
+		return nil, fmt.Errorf("Err by datastore.Update Hero: %v with err: %v", h, err)
 	}
+	h.Key = k.IntID()
 
-	return nil, nil
+	return &h, nil
 }
 
 // Delete a Hero from datastore
