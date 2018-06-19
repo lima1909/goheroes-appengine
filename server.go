@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 	"os"
@@ -42,12 +43,27 @@ func main() {
 
 	router.Handle("/", http.RedirectHandler("/api/heroes", http.StatusFound))
 
+	router.HandleFunc("/example", example)
 	router.HandleFunc("/api/heroes", heroes)
 	router.HandleFunc("/api/heroes/{id:[0-9]+}", heroID)
 	http.Handle("/", router)
 
 	log.Println("Server is started on: ", getHostAndPort())
 	appengine.Main()
+}
+
+func example(w http.ResponseWriter, r *http.Request) {
+	t, err := template.ParseFiles("template/index.html")
+	if err != nil {
+		fmt.Fprintf(w, "Err: %v\n", err)
+		return
+	}
+
+	err = t.Execute(w, "Hello World!")
+	if err != nil {
+		fmt.Fprintf(w, "Err: %v\n", err)
+		return
+	}
 }
 
 func heroes(w http.ResponseWriter, r *http.Request) {
