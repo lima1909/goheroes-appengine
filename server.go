@@ -76,7 +76,7 @@ func loadHeroes(w http.ResponseWriter) {
 	b, err := json.Marshal(Heroes)
 
 	if err != nil {
-		fmt.Fprintf(w, "Err by marshal heroes: %v", err)
+		fireError(w, "Err by marshal heroes: %v", err)
 		return
 	}
 
@@ -91,14 +91,14 @@ func getHeroByID(w http.ResponseWriter, r *http.Request) {
 	i, err := strconv.Atoi(varID)
 
 	if err != nil {
-		fmt.Fprintf(w, "Err during string convert: %v", err)
+		fireError(w, "Err during string convert: %v", err)
 		return
 	}
 
 	b, err := json.Marshal(Heroes[i-1])
 
 	if err != nil {
-		fmt.Fprintf(w, "Err by marshal hero: %v", err)
+		fireError(w, "Err by marshal hero: %v", err)
 		return
 	}
 
@@ -109,14 +109,14 @@ func updateHero(w http.ResponseWriter, r *http.Request) {
 	hero, err := getHeroFromRequest(r, w)
 
 	if err != nil {
-		fmt.Fprintf(w, "Err by getHeroFromRequest %v", err)
+		fireError(w, "Err by getHeroFromRequest %v", err)
 		return
 	}
 
 	i, err := strconv.Atoi(hero.ID)
 
 	if err != nil {
-		fmt.Fprintf(w, "Err during string convert: %v", err)
+		fireError(w, "Err during string convert: %v", err)
 		return
 	}
 
@@ -130,7 +130,7 @@ func addHero(w http.ResponseWriter, r *http.Request) {
 	hero, err := getHeroFromRequest(r, w)
 
 	if err != nil {
-		fmt.Fprintf(w, "Err by getHeroFromRequest %v", err)
+		fireError(w, "Err by getHeroFromRequest %v", err)
 		return
 	}
 
@@ -141,7 +141,7 @@ func addHero(w http.ResponseWriter, r *http.Request) {
 	b, err := json.Marshal(hero)
 
 	if err != nil {
-		fmt.Fprintf(w, "Err by marshal hero: %v", err)
+		fireError(w, "Err by marshal hero: %v", err)
 		return
 	}
 
@@ -154,7 +154,7 @@ func deleteHero(w http.ResponseWriter, r *http.Request) {
 	i, err := strconv.Atoi(varID)
 
 	if err != nil {
-		fmt.Fprintf(w, "Err during string convert: %v", err)
+		fireError(w, "Err during string convert: %v", err)
 		return
 	}
 
@@ -173,7 +173,7 @@ func searchHeroes(w http.ResponseWriter, r *http.Request) {
 	searchString, ok := r.URL.Query()["name"]
 
 	if !ok || len(searchString) < 1 {
-		log.Println("Url Param 'key' is missing")
+		fireError(w, "Url Param 'key' is missing", nil)
 		return
 	}
 
@@ -192,7 +192,7 @@ func searchHeroes(w http.ResponseWriter, r *http.Request) {
 	b, err := json.Marshal(findHeroes)
 
 	if err != nil {
-		fmt.Fprintf(w, "Err by marshal hero: %v", err)
+		fireError(w, "Err by marshal hero: %v", err)
 		return
 	}
 
@@ -223,4 +223,9 @@ func setHeaderOptions(w http.ResponseWriter) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+}
+
+func fireError(w http.ResponseWriter, message string, err error) {
+	formattedError := fmt.Sprintf(message, err)
+	http.Error(w, fmt.Errorf(formattedError).Error(), http.StatusInternalServerError)
 }
