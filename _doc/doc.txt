@@ -1,6 +1,9 @@
 app.yaml and more:
 	https://cloud.google.com/appengine/docs/standard/python/config/appref
 
+gcloud-cmd-ref:
+	https://cloud.google.com/sdk/gcloud/reference/alpha/interactive
+
 Golang Doc for App Engine:
 	https://cloud.google.com/appengine/docs/standard/go/reference
 	https://github.com/GoogleCloudPlatform/go-endpoints
