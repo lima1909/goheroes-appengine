@@ -27,4 +27,4 @@ clean:
 
 server:
 	dev_appserver.cmd --enable_console --port=8082 app.yaml
-	# dev_appserver.py  --clear-datastore=yes step0
+	# dev_appserver.py  --clear-datastore=yes app.yaml
