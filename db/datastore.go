@@ -22,11 +22,7 @@ type DatastoreService struct{}
 
 // List all Heroes, there are saved in datastore
 func (DatastoreService) List(c context.Context, name string) ([]service.Hero, error) {
-	heroes := []service.Hero{}
-	c, err := appengine.Namespace(c, NAMESPACE)
-	if err != nil {
-		return heroes, fmt.Errorf("Err by create CTX: %v", err)
-	}
+	c = setNamespace(c)
 
 	q := datastore.NewQuery(KIND)
 	if name != "" {
@@ -34,6 +30,7 @@ func (DatastoreService) List(c context.Context, name string) ([]service.Hero, er
 		log.Infof(c, "With Filter: Name=%s", name)
 	}
 
+	heroes := []service.Hero{}
 	keys, err := q.Order("ID").GetAll(c, &heroes)
 	if err != nil {
 		return heroes, fmt.Errorf("Err by datastore.GetAll: %v", err)
@@ -48,39 +45,54 @@ func (DatastoreService) List(c context.Context, name string) ([]service.Hero, er
 }
 
 // GetByID get Hero by the ID
-func (DatastoreService) GetByID(c context.Context, id int64) (service.Hero, error) {
-	hero := []service.Hero{}
-	c, err := appengine.Namespace(c, NAMESPACE)
-	if err != nil {
-		return service.Hero{}, fmt.Errorf("Err by create CTX: %v", err)
-	}
+func (DatastoreService) GetByID(c context.Context, id int64) (*service.Hero, error) {
+	c = setNamespace(c)
 
+	hero := []service.Hero{}
 	ks, err := datastore.NewQuery(KIND).Filter("ID =", id).GetAll(c, &hero)
 	if err != nil {
-		return service.Hero{}, fmt.Errorf("No Hero with ID: %v found in datastore: %v", id, err)
+		return nil, fmt.Errorf("No Hero with ID: %v found in datastore: %v", id, err)
 	}
 
-	if len(hero) > 0 {
+	if len(hero) > 0 && len(ks) > 0 {
 		hero[0].Key = ks[0].IntID()
-		return hero[0], nil
+		return &hero[0], nil
 	}
-	return service.Hero{}, service.HeroNotFoundErr
+
+	return nil, service.HeroNotFoundErr
 }
 
-// Add add a Hero to datastore
-func (DatastoreService) Add(c context.Context, h service.Hero) (service.Hero, error) {
-	hero := service.Hero{}
-	c, err := appengine.Namespace(c, NAMESPACE)
-	if err != nil {
-		return hero, fmt.Errorf("Err by create CTX: %v", err)
-	}
+// Add a Hero to datastore
+func (DatastoreService) Add(c context.Context, h service.Hero) (*service.Hero, error) {
+	c = setNamespace(c)
 
 	k := datastore.NewIncompleteKey(c, KIND, nil)
-	k, err = datastore.Put(c, k, &h)
+	k, err := datastore.Put(c, k, &h)
 	if err != nil {
-		return hero, fmt.Errorf("Err by datastore.Put: %v", err)
+		return nil, fmt.Errorf("Err by datastore.Put: %v", err)
 	}
 
-	hero.Key = k.IntID()
-	return hero, nil
+	h.Key = k.IntID()
+	return &h, nil
+}
+
+// Delete a Hero from datastore
+func (DatastoreService) Delete(c context.Context, id int64) error {
+	c = setNamespace(c)
+
+	k := datastore.NewKey(c, KIND, "", id, nil)
+	err := datastore.Delete(c, k)
+	if err != nil {
+		return fmt.Errorf("Err by datastore.Delete: %v", err)
+	}
+
+	return nil
+}
+
+func setNamespace(c context.Context) context.Context {
+	c, err := appengine.Namespace(c, NAMESPACE)
+	if err != nil {
+		log.Errorf(c, fmt.Sprintf("Err by set Namespace: %v", err))
+	}
+	return c
 }

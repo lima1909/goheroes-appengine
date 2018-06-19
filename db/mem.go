@@ -2,12 +2,18 @@ package db
 
 import (
 	"context"
+	"log"
 
 	"github.com/lima1909/goheroes-appengine/service"
 )
 
-var (
-	heroes = []service.Hero{
+// MemService is a Impl from service.HeroService
+type MemService struct {
+	heroes []service.Hero
+}
+
+func NewMemService() *MemService {
+	heroes := []service.Hero{
 		service.Hero{ID: 1, Name: "Jasmin"},
 		service.Hero{ID: 2, Name: "Mario"},
 		service.Hero{ID: 3, Name: "Alex M"},
@@ -16,33 +22,52 @@ var (
 		service.Hero{ID: 6, Name: "Lena H"},
 		service.Hero{ID: 7, Name: "Chris S"},
 	}
-)
-
-// MemService is a Impl from service.HeroService
-type MemService struct{}
+	return &MemService{heroes}
+}
 
 // List all Heroes, there are saved in the heroes array
-func (MemService) List(c context.Context, name string) ([]service.Hero, error) {
-	return findHeroByName(name), nil
+func (m MemService) List(c context.Context, name string) ([]service.Hero, error) {
+	return findHeroByName(m.heroes, name), nil
 }
 
 // GetByID get Hero by the ID
-func (MemService) GetByID(c context.Context, id int64) (service.Hero, error) {
-	for _, h := range heroes {
+func (m MemService) GetByID(c context.Context, id int64) (*service.Hero, error) {
+	for _, h := range m.heroes {
 		if h.ID == id {
-			return h, nil
+			return &h, nil
 		}
 	}
-	return service.Hero{}, service.HeroNotFoundErr
+	return nil, service.HeroNotFoundErr
 }
 
 // Add an Hero
-func (MemService) Add(c context.Context, h service.Hero) (service.Hero, error) {
-	heroes = append(heroes, h)
-	return h, nil
+func (m *MemService) Add(c context.Context, h service.Hero) (*service.Hero, error) {
+	m.heroes = append(m.heroes, h)
+	log.Printf("add hero: %v\n", h)
+	return &h, nil
 }
 
-func findHeroByName(name string) []service.Hero {
+// Delete an Hero
+func (m *MemService) Delete(c context.Context, id int64) error {
+	index := -1
+	for i, h := range m.heroes {
+		if h.ID == id {
+			index = i
+			break
+		}
+	}
+
+	if index != -1 {
+		log.Printf("delete hero: %v\n", m.heroes[index])
+		m.heroes = append(m.heroes[:index], m.heroes[index+1:]...)
+
+		return nil
+	}
+
+	return service.HeroNotFoundErr
+}
+
+func findHeroByName(heroes []service.Hero, name string) []service.Hero {
 	if name == "" {
 		return heroes
 	}
@@ -51,6 +76,7 @@ func findHeroByName(name string) []service.Hero {
 	for _, h := range heroes {
 		if h.Name == name {
 			hs = append(hs, h)
+			log.Printf("find hero: %v\n", h)
 		}
 	}
 	return hs

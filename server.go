@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 
 	"github.com/gorilla/mux"
@@ -18,21 +19,35 @@ var (
 	app *service.App
 )
 
+func getHostAndPort() string {
+	port := "8080"
+	if s := os.Getenv("PORT"); s != "" {
+		port = s
+	}
+
+	host := ""
+	if appengine.IsDevAppServer() {
+		host = "127.0.0.1"
+	}
+
+	return host + ":" + port
+}
+
 func main() {
 
-	app = service.NewApp(db.MemService{})
+	app = service.NewApp(db.NewMemService())
+	// app = service.NewApp(db.DatastoreService{})
 
 	router := mux.NewRouter()
 
 	router.Handle("/", http.RedirectHandler("/api/heroes", http.StatusFound))
 
 	router.HandleFunc("/api/heroes", heroes)
-	router.Methods("GET").Path("/api/heroes/{id:[0-9]+}").HandlerFunc(heroID)
+	router.HandleFunc("/api/heroes/{id:[0-9]+}", heroID)
 	http.Handle("/", router)
 
-	log.Println("Start Server: http://localhost:8080")
-	log.Fatalln(http.ListenAndServe(":8080", nil))
-	// appengine.Main()
+	log.Println("Server is started on: ", getHostAndPort())
+	appengine.Main()
 }
 
 func heroes(w http.ResponseWriter, r *http.Request) {
@@ -44,6 +59,20 @@ func heroes(w http.ResponseWriter, r *http.Request) {
 		heroList(w, r)
 	case "POST":
 		addHero(w, r)
+	default:
+		http.Error(w, "invalid method: "+r.Method, http.StatusBadRequest)
+	}
+}
+
+func heroID(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-Type", "application/json")
+
+	switch r.Method {
+	case "GET":
+		getHero(w, r)
+	case "DELETE":
+		deleteHero(w, r)
 	default:
 		http.Error(w, "invalid method: "+r.Method, http.StatusBadRequest)
 	}
@@ -81,13 +110,13 @@ func addHero(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hero, err = app.Add(appengine.NewContext(r), hero)
+	h, err := app.Add(appengine.NewContext(r), hero)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	b, err := json.Marshal(hero)
+	b, err := json.Marshal(h)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -96,10 +125,7 @@ func addHero(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "%s", string(b))
 }
 
-func heroID(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Content-Type", "application/json")
-
+func getHero(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	varID := vars["id"]
 	id, err := strconv.Atoi(varID)
@@ -121,4 +147,22 @@ func heroID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fmt.Fprintf(w, "%s", string(b))
+}
+
+func deleteHero(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	varID := vars["id"]
+	id, err := strconv.Atoi(varID)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("invalid id: %v", varID), http.StatusBadRequest)
+		return
+	}
+
+	err = app.Delete(appengine.NewContext(r), int64(id))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	fmt.Fprintf(w, "")
 }

@@ -20,6 +20,7 @@ type Hero struct {
 // HeroService access to Heroes methods
 type HeroService interface {
 	List(c context.Context, name string) ([]Hero, error)
-	GetByID(c context.Context, id int64) (Hero, error)
-	Add(c context.Context, h Hero) (Hero, error)
+	GetByID(c context.Context, id int64) (*Hero, error)
+	Add(c context.Context, h Hero) (*Hero, error)
+	Delete(c context.Context, id int64) error
 }
