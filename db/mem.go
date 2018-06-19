@@ -12,6 +12,7 @@ type MemService struct {
 	heroes []service.Hero
 }
 
+// NewMemService create a new instance of MemService
 func NewMemService() *MemService {
 	heroes := []service.Hero{
 		service.Hero{ID: 1, Name: "Jasmin"},
@@ -37,7 +38,7 @@ func (m MemService) GetByID(c context.Context, id int64) (*service.Hero, error) 
 			return &h, nil
 		}
 	}
-	return nil, service.HeroNotFoundErr
+	return nil, service.ErrHeroNotFound
 }
 
 // Add an Hero
@@ -58,11 +59,11 @@ func (m *MemService) Update(c context.Context, h service.Hero) (*service.Hero, e
 		}
 	}
 
-	return nil, service.HeroNotFoundErr
+	return nil, service.ErrHeroNotFound
 }
 
 // Delete an Hero
-func (m *MemService) Delete(c context.Context, id int64) error {
+func (m *MemService) Delete(c context.Context, id int64) (*service.Hero, error) {
 	index := -1
 	for i, h := range m.heroes {
 		if h.ID == id {
@@ -72,13 +73,14 @@ func (m *MemService) Delete(c context.Context, id int64) error {
 	}
 
 	if index != -1 {
-		log.Printf("delete hero: %v\n", m.heroes[index])
+		h := &m.heroes[index]
+		log.Printf("delete hero: %v\n", h)
 		m.heroes = append(m.heroes[:index], m.heroes[index+1:]...)
 
-		return nil
+		return h, nil
 	}
 
-	return service.HeroNotFoundErr
+	return nil, service.ErrHeroNotFound
 }
 
 func findHeroByName(heroes []service.Hero, name string) []service.Hero {

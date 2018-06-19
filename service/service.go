@@ -7,7 +7,8 @@ import (
 )
 
 var (
-	HeroNotFoundErr = errors.New("Hero not Found")
+	// ErrHeroNotFound if no Hero was found
+	ErrHeroNotFound = errors.New("Hero not Found")
 )
 
 // Hero the struct
@@ -23,5 +24,5 @@ type HeroService interface {
 	GetByID(c context.Context, id int64) (*Hero, error)
 	Add(c context.Context, h Hero) (*Hero, error)
 	Update(c context.Context, h Hero) (*Hero, error)
-	Delete(c context.Context, id int64) error
+	Delete(c context.Context, id int64) (*Hero, error)
 }

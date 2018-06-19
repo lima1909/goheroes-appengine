@@ -28,10 +28,12 @@ func (DatastoreService) List(c context.Context, name string) ([]service.Hero, er
 	if name != "" {
 		q = q.Filter("Name =", name)
 		log.Infof(c, "With Filter: Name=%s", name)
+	} else {
+		q = q.Order("ID")
 	}
 
 	heroes := []service.Hero{}
-	keys, err := q.Order("ID").GetAll(c, &heroes)
+	keys, err := q.GetAll(c, &heroes)
 	if err != nil {
 		return heroes, fmt.Errorf("Err by datastore.GetAll: %v", err)
 	}
@@ -59,7 +61,7 @@ func (DatastoreService) GetByID(c context.Context, id int64) (*service.Hero, err
 		return &hero[0], nil
 	}
 
-	return nil, service.HeroNotFoundErr
+	return nil, service.ErrHeroNotFound
 }
 
 // Add a Hero to datastore
@@ -95,16 +97,21 @@ func (ds DatastoreService) Update(c context.Context, h service.Hero) (*service.H
 }
 
 // Delete a Hero from datastore
-func (DatastoreService) Delete(c context.Context, id int64) error {
+func (ds DatastoreService) Delete(c context.Context, id int64) (*service.Hero, error) {
 	c = setNamespace(c)
 
-	k := datastore.NewKey(c, KIND, "", id, nil)
-	err := datastore.Delete(c, k)
+	hf, err := ds.GetByID(c, id)
 	if err != nil {
-		return fmt.Errorf("Err by datastore.Delete: %v", err)
+		return nil, fmt.Errorf("Err by datastore.Delete (GetByID: %v", err)
 	}
 
-	return nil
+	k := datastore.NewKey(c, KIND, "", hf.Key, nil)
+	err = datastore.Delete(c, k)
+	if err != nil {
+		return nil, fmt.Errorf("Err by datastore.Delete: %v", err)
+	}
+
+	return hf, nil
 }
 
 func setNamespace(c context.Context) context.Context {

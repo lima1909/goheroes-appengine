@@ -17,49 +17,49 @@ import (
 )
 
 var (
-	app *service.App
+	app  *service.App
+	info Info
 )
 
-func getHostAndPort() string {
-	port := "8080"
-	if s := os.Getenv("PORT"); s != "" {
-		port = s
-	}
-
-	host := ""
-	if appengine.IsDevAppServer() {
-		host = "127.0.0.1"
-	}
-
-	return host + ":" + port
+// Info to the current system
+type Info struct {
+	HersoService       string
+	EnvHeroServiceImpl string
 }
 
 func main() {
-
-	app = service.NewApp(db.NewMemService())
-	// app = service.NewApp(db.DatastoreService{})
+	info = Info{EnvHeroServiceImpl: os.Getenv("HERO_SERVICE_IMPL")}
 
 	router := mux.NewRouter()
 
-	router.Handle("/", http.RedirectHandler("/api/heroes", http.StatusFound))
+	router.Handle("/", http.RedirectHandler("/info", http.StatusFound))
 
-	router.HandleFunc("/example", example)
+	router.HandleFunc("/info", infoPage)
 	router.HandleFunc("/api/heroes", heroes)
 	router.HandleFunc("/api/heroes/{id:[0-9]+}", heroID)
 	http.Handle("/", router)
 
-	log.Println("Server is started on: ", getHostAndPort())
+	if info.EnvHeroServiceImpl == "datastore" {
+		app = service.NewApp(db.DatastoreService{})
+		info.HersoService = "DatastoreService"
+	} else {
+		app = service.NewApp(db.NewMemService())
+		info.HersoService = "MemService"
+		log.Println("HeroServicem is MemService")
+		log.Println("Start server on: http://localhost:8080")
+	}
+
 	appengine.Main()
 }
 
-func example(w http.ResponseWriter, r *http.Request) {
-	t, err := template.ParseFiles("template/index.html")
+func infoPage(w http.ResponseWriter, r *http.Request) {
+	t, err := template.ParseFiles("template/info.html")
 	if err != nil {
 		fmt.Fprintf(w, "Err: %v\n", err)
 		return
 	}
 
-	err = t.Execute(w, "Hello World!")
+	err = t.Execute(w, info)
 	if err != nil {
 		fmt.Fprintf(w, "Err: %v\n", err)
 		return
@@ -178,13 +178,20 @@ func deleteHero(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = app.Delete(appengine.NewContext(r), int64(id))
+	hero, err := app.Delete(appengine.NewContext(r), int64(id))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	fmt.Fprintf(w, "")
+	b, err := json.Marshal(hero)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Fprintf(w, "%s", string(b))
+
 }
 
 func updateHero(w http.ResponseWriter, r *http.Request) {
