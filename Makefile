@@ -16,6 +16,12 @@ deploy:
 logs:
 	$(GCLOUD_CMD) app logs tail
 
+ssh:
+	$(GCLOUD_CMD)  alpha cloud-shell ssh
+
+interactive:
+	$(GCLOUD_CMD) alpha interactive
+
 version: 
 	@$(GCLOUD_CMD) app versions list
 
