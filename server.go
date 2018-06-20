@@ -23,7 +23,7 @@ var (
 
 // Info to the current system
 type Info struct {
-	HersoService       string
+	HeroesService      string
 	EnvHeroServiceImpl string
 }
 
@@ -36,15 +36,16 @@ func main() {
 
 	router.HandleFunc("/info", infoPage)
 	router.HandleFunc("/api/heroes", heroes)
+	router.HandleFunc("/api/heroes/", searchHeroes)
 	router.HandleFunc("/api/heroes/{id:[0-9]+}", heroID)
 	http.Handle("/", router)
 
 	if info.EnvHeroServiceImpl == "datastore" {
 		app = service.NewApp(db.DatastoreService{})
-		info.HersoService = "DatastoreService"
+		info.HeroesService = "DatastoreService"
 	} else {
 		app = service.NewApp(db.NewMemService())
-		info.HersoService = "MemService"
+		info.HeroesService = "MemService"
 		log.Println("HeroServicem is MemService")
 		log.Println("Start server on: http://localhost:8080")
 	}
@@ -67,12 +68,13 @@ func infoPage(w http.ResponseWriter, r *http.Request) {
 }
 
 func heroes(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Content-Type", "application/json")
+	setHeaderOptions(w)
 
 	switch r.Method {
 	case "GET":
 		heroList(w, r)
+	case "OPTIONS":
+		fmt.Fprintf(w, string(http.StatusOK))
 	case "POST":
 		addHero(w, r)
 	case "PUT":
@@ -84,10 +86,11 @@ func heroes(w http.ResponseWriter, r *http.Request) {
 }
 
 func heroID(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Content-Type", "application/json")
+	setHeaderOptions(w)
 
 	switch r.Method {
+	case "OPTIONS":
+		fmt.Fprintf(w, string(http.StatusOK))
 	case "GET":
 		getHero(w, r)
 	case "DELETE":
@@ -99,13 +102,7 @@ func heroID(w http.ResponseWriter, r *http.Request) {
 }
 
 func heroList(w http.ResponseWriter, r *http.Request) {
-	name := ""
-	names, ok := r.URL.Query()["name"]
-	if ok || len(names) == 1 {
-		name = names[0]
-	}
-
-	heroes, err := app.List(appengine.NewContext(r), name)
+	heroes, err := app.List(appengine.NewContext(r), "")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -217,4 +214,34 @@ func updateHero(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fmt.Fprintf(w, "%s", string(b))
+}
+
+func searchHeroes(w http.ResponseWriter, r *http.Request) {
+	name := ""
+	names, ok := r.URL.Query()["name"]
+	if ok || len(names) == 1 {
+		name = names[0]
+	}
+
+	heroes, err := app.List(appengine.NewContext(r), name)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	setHeaderOptions(w)
+
+	b, err := json.Marshal(heroes)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Fprintf(w, "%s", string(b))
+}
+
+func setHeaderOptions(w http.ResponseWriter) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 }

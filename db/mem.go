@@ -43,6 +43,7 @@ func (m MemService) GetByID(c context.Context, id int64) (*service.Hero, error) 
 
 // Add an Hero
 func (m *MemService) Add(c context.Context, h service.Hero) (*service.Hero, error) {
+	h.ID = int64(len(m.heroes) + 1)
 	m.heroes = append(m.heroes, h)
 	log.Printf("add hero: %v\n", h)
 	return &h, nil
