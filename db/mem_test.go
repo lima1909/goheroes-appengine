@@ -48,9 +48,9 @@ func TestAdd(t *testing.T) {
 		t.Errorf("Amount of Heroes: %v != %v", len(m.heroes), size)
 	}
 
-	//check if added hero has id = size - 1
-	if hero.ID != int64(size) {
-		t.Errorf("ID of new Hero: %v != %v", hero.ID, size)
+	//check if added hero has id = maxID
+	if hero.ID != m.maxID {
+		t.Errorf("ID of new Hero: %v != %v", hero.ID, m.maxID)
 	}
 }
 

@@ -10,6 +10,7 @@ import (
 // MemService is a Impl from service.HeroService
 type MemService struct {
 	heroes []service.Hero
+	maxID  int64
 }
 
 // NewMemService create a new instance of MemService
@@ -23,7 +24,9 @@ func NewMemService() *MemService {
 		service.Hero{ID: 6, Name: "Lena H"},
 		service.Hero{ID: 7, Name: "Chris S"},
 	}
-	return &MemService{heroes}
+	maxID := int64(7)
+
+	return &MemService{heroes, maxID}
 }
 
 // List all Heroes, there are saved in the heroes array
@@ -43,7 +46,8 @@ func (m MemService) GetByID(c context.Context, id int64) (*service.Hero, error) 
 
 // Add an Hero
 func (m *MemService) Add(c context.Context, h service.Hero) (*service.Hero, error) {
-	h.ID = int64(len(m.heroes) + 1)
+	m.maxID++
+	h.ID = m.maxID
 	m.heroes = append(m.heroes, h)
 	log.Printf("add hero: %v\n", h)
 	return &h, nil
