@@ -36,10 +36,21 @@ func TestAdd(t *testing.T) {
 	m := NewMemService()
 	size := len(m.heroes)
 
-	m.Add(context.TODO(), service.Hero{ID: 99, Name: "Test"})
+	hero, err := m.Add(context.TODO(), service.Hero{ID: 99, Name: "Test"})
+	if err != nil {
+		t.Errorf("no err expected: %v", err)
+	}
+
 	size = size + 1
+
+	//check if list length is one item longer
 	if len(m.heroes) != size {
-		t.Errorf("%v != %v", len(m.heroes), size)
+		t.Errorf("Amount of Heroes: %v != %v", len(m.heroes), size)
+	}
+
+	//check if added hero has id = size - 1
+	if hero.ID != int64(size) {
+		t.Errorf("ID of new Hero: %v != %v", hero.ID, size)
 	}
 }
 
