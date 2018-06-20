@@ -79,11 +79,6 @@ func (m *MemService) Delete(c context.Context, id int64) (*service.Hero, error) 
 		log.Printf("delete hero: %v\n", h)
 		m.heroes = append(m.heroes[:index], m.heroes[index+1:]...)
 
-		//adjust Hero.ID
-		for j := (index); j < len(m.heroes); j++ {
-			m.heroes[j].ID = int64(j + 1)
-		}
-
 		return h, nil
 	}
 

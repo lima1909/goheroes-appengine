@@ -78,13 +78,6 @@ func TestDelete(t *testing.T) {
 	if len(m.heroes) != size {
 		t.Errorf("%v != %v", len(m.heroes), size)
 	}
-
-	//check if Ids are correct
-	for index, hero := range m.heroes {
-		if hero.ID != int64(index+1) {
-			t.Errorf("ID of new Hero: %v != %v", hero.ID, index+1)
-		}
-	}
 }
 
 func TestAddAndGetAndDelete(t *testing.T) {
