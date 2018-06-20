@@ -130,3 +130,34 @@ func TestUpdate(t *testing.T) {
 	}
 
 }
+
+func TestAddAndSearch(t *testing.T) {
+	m := NewMemService()
+	m.Add(context.TODO(), service.Hero{Name: "Abc"})
+	m.Add(context.TODO(), service.Hero{Name: "Abcd"})
+	m.Add(context.TODO(), service.Hero{Name: "Abcde"})
+
+	fh, err := m.List(context.TODO(), "abc")
+	if err != nil {
+		t.Errorf("no err expected: %v", err)
+	}
+	if 3 != len(fh) {
+		t.Errorf("%v != %v", 3, len(fh))
+	}
+
+	fh, err = m.List(context.TODO(), "Abc")
+	if err != nil {
+		t.Errorf("no err expected: %v", err)
+	}
+	if 3 != len(fh) {
+		t.Errorf("%v != %v", 3, len(fh))
+	}
+
+	fh, err = m.List(context.TODO(), "cd")
+	if err != nil {
+		t.Errorf("no err expected: %v", err)
+	}
+	if 2 != len(fh) {
+		t.Errorf("%v != %v", 2, len(fh))
+	}
+}

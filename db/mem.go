@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"log"
+	"strings"
 
 	"github.com/lima1909/goheroes-appengine/service"
 )
@@ -96,7 +97,7 @@ func findHeroByName(heroes []service.Hero, name string) []service.Hero {
 
 	hs := make([]service.Hero, 0)
 	for _, h := range heroes {
-		if h.Name == name {
+		if strings.Contains(strings.ToUpper(h.Name), strings.ToUpper(name)) { //need uppercase to make it case insensitiv
 			hs = append(hs, h)
 			log.Printf("find hero: %v\n", h)
 		}
