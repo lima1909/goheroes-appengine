@@ -41,9 +41,13 @@ func TestGetHeroes_heroList(t *testing.T) {
 		t.Errorf("heroes expected: %v and get: %v", len(hs), len(heroes))
 	}
 
-	// check contenttype
+	// check Header: contenttype
 	if resp.Header.Get("Content-Type") != "text/plain; charset=utf-8" {
 		t.Errorf(`expect "text/plain; charset=utf-8" but get: %v`, resp.Header.Get("Content-Type"))
+	}
+	// check Header: Access-Control-Allow-Origin
+	if resp.Header.Get("Access-Control-Allow-Origin") != "*" {
+		t.Errorf(`expect "*" but get: %v`, resp.Header.Get("Access-Control-Allow-Origin"))
 	}
 }
 
@@ -72,7 +76,11 @@ func TestGetHeroID_getHero(t *testing.T) {
 		t.Errorf("expect ID=1, but is: %v", hero.ID)
 	}
 	if hero.Name != hr.Name {
-		t.Errorf("expect Name: %v, but is: %v",hr.Name, hero.Name)
+		t.Errorf("expect Name: %v, but is: %v", hr.Name, hero.Name)
 	}
 
+	// check Header: Access-Control-Allow-Origin
+	if resp.Header.Get("Access-Control-Allow-Origin") != "*" {
+		t.Errorf(`expect "*" but get: %v`, resp.Header.Get("Access-Control-Allow-Origin"))
+	}
 }
