@@ -149,7 +149,7 @@ func getHero(w http.ResponseWriter, r *http.Request) {
 	varID := vars["id"]
 	id, err := strconv.Atoi(varID)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("invalid id: %v", varID), http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("invalid id: %v in params: %v", vars, varID), http.StatusBadRequest)
 		return
 	}
 
