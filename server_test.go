@@ -115,3 +115,35 @@ func TestGetHeroID_searchHeroes(t *testing.T) {
 		t.Errorf(`expect "*" but get: %v`, resp.Header.Get("Access-Control-Allow-Origin"))
 	}
 }
+
+func TestOptionsHeroID(t *testing.T) {
+	r := httptest.NewRequest("OPTIONS", "http://localhost:8080/api/heroes", nil)
+	w := httptest.NewRecorder()
+	heroID(w, r)
+
+	resp := w.Result()
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("expect status ok (200), but is: %v", resp.StatusCode)
+	}
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	if len(body) == 0 {
+		t.Errorf("expect body, but is: %v", string(body))
+	}
+}
+
+func TestOptionsHeroes(t *testing.T) {
+	r := httptest.NewRequest("OPTIONS", "http://localhost:8080/api/heroes", nil)
+	w := httptest.NewRecorder()
+	heroes(w, r)
+
+	resp := w.Result()
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("expect status ok (200), but is: %v", resp.StatusCode)
+	}
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	if len(body) == 0 {
+		t.Errorf("expect body, but is: %v", string(body))
+	}
+}
