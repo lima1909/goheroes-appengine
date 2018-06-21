@@ -1,0 +1,34 @@
+runtime: python27
+threadsafe: true
+api_version: 1
+
+skip_files:
+- ^(.*/)?app\.yaml
+- ^(.*/)?app\.yml
+- ^(.*/)?#.*#
+- ^(.*/)?.*~
+- ^(.*/)?.*\.py[co]
+- ^(.*/)?.*/RCS/.*
+- ^(.*/)?\..*
+- ^(.*/)?tests$
+- ^(.*/)?test$
+- ^test/(.*/)?
+- ^COPYING.LESSER
+- ^README\..*
+- \.gitignore
+- ^\.git/.*
+- \.*\.lint$
+- ^fabfile\.py
+- ^testrunner\.py
+- ^grunt\.js
+- ^node_modules/(.*/)?
+- ^src/(.*/)?
+- ^e2e/(.*/)?
+
+handlers:
+- url: /(.*\.(gif|png|jpeg|jpg|css|js|ico))$
+  static_files: dist/TourOfHeroes/\1
+  upload: dist/TourOfHeroes/(.*)
+- url: /(.*)
+  static_files: dist/TourOfHeroes/index.html
+  upload: dist/TourOfHeroes/*
