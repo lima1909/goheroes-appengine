@@ -1,0 +1,68 @@
+swagger: "2.0"
+info:
+  title: "Backend for Angular: TourOfHeroes"
+  description: "Get a backend for an interactive application, write in Angular."
+  version: "1.0.0"
+
+host: "goheros-207118.appspot.com"
+schemes:
+  - "https"
+  
+paths:
+  "/api/heroes":
+    get:
+      description: "Get a List off all heroes."
+      operationId: "heroes"
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: "#/definitions/Heroes"          
+    post:
+      description: Add a new book to the list
+      operationId: save
+      parameters:
+      - name: book
+        description: Book properties
+        in: body
+        required: true
+        schema:
+          $ref: "#/definitions/Hero"
+      responses:
+        201:
+          description: Success
+          schema:
+            $ref: "#/definitions/Hero"
+  "/api/heroes/{id}":
+    get:
+      description: "Get a one hero by ID."
+      operationId: "heroID"
+      parameters:
+      - name: id
+        description: Hero id
+        type: integer
+        in: path
+        required: true      
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: "#/definitions/Hero"          
+
+
+definitions:
+  Hero:
+    properties:
+      id:
+        type: integer
+        description: Unique identifier representing a hero
+      name:
+        type: string
+        description: Name of the hero
+      key:
+        type: integer
+        description: key is not 0, if the hero is saved in a database
+  Heroes:
+    type: array
+    items:
+      $ref: '#/definitions/Hero'
