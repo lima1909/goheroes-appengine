@@ -27,7 +27,7 @@ type Info struct {
 	EnvHeroServiceImpl string
 }
 
-func main() {
+func init() {
 	info = Info{EnvHeroServiceImpl: os.Getenv("HERO_SERVICE_IMPL")}
 
 	router := mux.NewRouter()
@@ -49,7 +49,9 @@ func main() {
 		log.Println("HeroServicem is MemService")
 		log.Println("Start server on: http://localhost:8080")
 	}
+}
 
+func main() {
 	appengine.Main()
 }
 
