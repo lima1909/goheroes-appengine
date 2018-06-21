@@ -68,6 +68,27 @@ func (m *MemService) Update(c context.Context, h service.Hero) (*service.Hero, e
 	return nil, service.ErrHeroNotFound
 }
 
+// UpdatePosition of Hero
+func (m *MemService) UpdatePosition(c context.Context, h service.Hero, pos int64) (*service.Hero, error) {
+
+	if pos > int64(len(m.heroes)+1) {
+		return nil, service.ErrPosNotFound
+	}
+
+	oldPos := 0
+	for i, hero := range m.heroes {
+		if hero.ID == h.ID {
+			oldPos = i
+			break
+		}
+	}
+
+	newHeroesSlice := append(m.heroes[:oldPos], m.heroes[oldPos+1:]...)
+	m.heroes = append(newHeroesSlice[:pos], append([]service.Hero{h}, newHeroesSlice[pos:]...)...)
+
+	return &m.heroes[pos], nil
+}
+
 // Delete an Hero
 func (m *MemService) Delete(c context.Context, id int64) (*service.Hero, error) {
 	index := -1
