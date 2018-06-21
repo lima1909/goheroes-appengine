@@ -34,3 +34,7 @@ clean:
 server:
 	dev_appserver.cmd --enable_console --port=8082 app.yaml
 	# dev_appserver.py  --clear-datastore=yes app.yaml
+
+endpoint:
+	$(GCLOUD_CMD) endpoints services list
+	$(GCLOUD_CMD) endpoints services deploy swagger.yaml
