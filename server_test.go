@@ -84,3 +84,34 @@ func TestGetHeroID_getHero(t *testing.T) {
 		t.Errorf(`expect "*" but get: %v`, resp.Header.Get("Access-Control-Allow-Origin"))
 	}
 }
+
+func TestGetHeroID_searchHeroes(t *testing.T) {
+	r := httptest.NewRequest("GET", "http://localhost:8080/api/heroes", nil)
+	q := r.URL.Query()
+	q.Add("name", "Jasmin")
+	r.URL.RawQuery = q.Encode()
+	w := httptest.NewRecorder()
+	searchHeroes(w, r)
+
+	// check status code
+	resp := w.Result()
+	body, _ := ioutil.ReadAll(resp.Body)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("expected status ok (200), but is: %v (%v)", resp.StatusCode, string(body))
+	}
+
+	heroes := make([]service.Hero, 0)
+	err := json.Unmarshal(body, &heroes)
+	if err != nil {
+		t.Errorf("No err expected: %v", err)
+	}
+	// check result: one Hero
+	if len(heroes) != 1 {
+		t.Errorf("expect one hero as search-result, but %v", len(heroes))
+	}
+
+	// check Header: Access-Control-Allow-Origin
+	if resp.Header.Get("Access-Control-Allow-Origin") != "*" {
+		t.Errorf(`expect "*" but get: %v`, resp.Header.Get("Access-Control-Allow-Origin"))
+	}
+}
