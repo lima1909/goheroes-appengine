@@ -203,10 +203,36 @@ func updateHero(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h, err := app.Update(appengine.NewContext(r), hero)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+	//is the position changed?
+	posString := ""
+	res, ok := r.URL.Query()["pos"]
+	if ok || len(res) == 1 {
+		posString = res[0]
+	}
+
+	var h *service.Hero
+	if posString == "" {
+		//no new position - update name of hero
+
+		h, err = app.Update(appengine.NewContext(r), hero)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	} else {
+		// new position - update list of heroes
+
+		pos, err := strconv.Atoi(posString)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		h, err = app.UpdatePosition(appengine.NewContext(r), hero, int64(pos))
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	b, err := json.Marshal(h)

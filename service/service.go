@@ -9,6 +9,8 @@ import (
 var (
 	// ErrHeroNotFound if no Hero was found
 	ErrHeroNotFound = errors.New("Hero not Found")
+	// ErrPosNotFound if new Position is out of range
+	ErrPosNotFound = errors.New("Out of Range")
 )
 
 // Hero the struct
@@ -24,5 +26,6 @@ type HeroService interface {
 	GetByID(c context.Context, id int64) (*Hero, error)
 	Add(c context.Context, h Hero) (*Hero, error)
 	Update(c context.Context, h Hero) (*Hero, error)
+	UpdatePosition(c context.Context, h Hero, pos int64) (*Hero, error)
 	Delete(c context.Context, id int64) (*Hero, error)
 }

@@ -97,6 +97,12 @@ func (ds DatastoreService) Update(c context.Context, h service.Hero) (*service.H
 	return &h, nil
 }
 
+// UpdatePosition of Hero
+func (ds DatastoreService) UpdatePosition(c context.Context, h service.Hero, pos int64) (*service.Hero, error) {
+	//TODO: need to be implemented
+	return nil, fmt.Errorf("not yet implemented")
+}
+
 // Delete a Hero from datastore
 func (ds DatastoreService) Delete(c context.Context, id int64) (*service.Hero, error) {
 	c = setNamespace(c)

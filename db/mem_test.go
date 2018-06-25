@@ -161,3 +161,31 @@ func TestAddAndSearch(t *testing.T) {
 		t.Errorf("%v != %v", 2, len(fh))
 	}
 }
+
+func TestSwitchPositions(t *testing.T) {
+	m := NewMemService()
+	h := service.Hero{ID: 7, Name: "Chris S"}
+
+	_, err := m.UpdatePosition(context.TODO(), h, 6)
+	if err != nil {
+		t.Errorf("no err expected: %v", err)
+	}
+
+	heroAt6 := m.heroes[6]
+
+	if heroAt6.ID != h.ID {
+		t.Errorf("%v != %v", heroAt6.ID, h.ID)
+	}
+
+	_, err = m.UpdatePosition(context.TODO(), h, 5)
+	if err != nil {
+		t.Errorf("no err expected: %v", err)
+	}
+
+	heroAt5 := m.heroes[5]
+
+	if heroAt5.ID != h.ID {
+		t.Errorf("%v != %v", heroAt5.ID, h.ID)
+	}
+
+}
