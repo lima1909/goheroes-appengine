@@ -1,3 +1,7 @@
+traivs:
+	https://travis-ci.org/getting_started
+	http://blog.tgrrtt.com/exploring-the-travisci-configuration-file
+
 swagger:
 	https://m.heise.de/developer/artikel/REST-APIs-mit-Node-js-und-Swagger-3820025.html?seite=all
 	https://editor.swagger.io/
