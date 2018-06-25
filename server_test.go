@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/gorilla/mux"
@@ -53,7 +54,7 @@ func TestGetHeroes_heroList(t *testing.T) {
 	}
 }
 
-func TestGetHeroes_heroListHandler(t *testing.T) {
+func TestHeroListHandlerCORS(t *testing.T) {
 	resp, err := http.Get(fmt.Sprintf("%s/api/heroes", server.URL))
 	if err != nil {
 		t.Errorf("No err expected: %v", err)
@@ -65,7 +66,7 @@ func TestGetHeroes_heroListHandler(t *testing.T) {
 	}
 }
 
-func TestGetHeroID_getHero(t *testing.T) {
+func TestGetHeroID(t *testing.T) {
 	r := httptest.NewRequest("GET", "http://localhost:8080/api/heroes", nil)
 	r = mux.SetURLVars(r, map[string]string{"id": "1"})
 	w := httptest.NewRecorder()
@@ -95,7 +96,7 @@ func TestGetHeroID_getHero(t *testing.T) {
 
 }
 
-func TestGetHeroID_getHeroHandler(t *testing.T) {
+func TestGetHeroIDHeroHandlerCORS(t *testing.T) {
 	resp, err := http.Get(fmt.Sprintf("%s/api/heroes/2", server.URL))
 	if err != nil {
 		t.Errorf("No err expected: %v", err)
@@ -107,7 +108,7 @@ func TestGetHeroID_getHeroHandler(t *testing.T) {
 	}
 }
 
-func TestGetHeroID_searchHeroes(t *testing.T) {
+func TestSearchHeroes(t *testing.T) {
 	r := httptest.NewRequest("GET", "http://localhost:8080/api/heroes", nil)
 	q := r.URL.Query()
 	q.Add("name", "Jasmin")
@@ -133,7 +134,7 @@ func TestGetHeroID_searchHeroes(t *testing.T) {
 	}
 }
 
-func TestGetHeroID_searchHeroesHandler(t *testing.T) {
+func TestSearchHeroesHandlerCORS(t *testing.T) {
 	resp, err := http.Get(fmt.Sprintf("%s/api/heroes/?name=%s", server.URL, url.QueryEscape("Adam O")))
 	if err != nil {
 		t.Errorf("No err expected: %v", err)
@@ -145,7 +146,7 @@ func TestGetHeroID_searchHeroesHandler(t *testing.T) {
 	}
 }
 
-func TestOptionsHeroID(t *testing.T) {
+func TestOptionsCORS(t *testing.T) {
 	req, err := http.NewRequest("OPTIONS", fmt.Sprintf("%s/api/heroes", server.URL), nil)
 	if err != nil {
 		t.Errorf("No err expected: %v", err)
@@ -155,12 +156,47 @@ func TestOptionsHeroID(t *testing.T) {
 		t.Errorf("No err expected: %v", err)
 	}
 
+	// check StatusOK
 	if resp.StatusCode != http.StatusOK {
 		t.Errorf("expect status ok (200), but is: %v", resp.StatusCode)
 	}
 
+	// check Header: Access-Control-Allow-Origin
+	if resp.Header.Get("Access-Control-Allow-Origin") != "*" {
+		t.Errorf(`expect "*" but get: %v`, resp.Header.Get("Access-Control-Allow-Origin"))
+	}
+
+	// by OPTIONS you get no body
 	body, _ := ioutil.ReadAll(resp.Body)
 	if len(body) != 0 {
 		t.Errorf("no body expect, but is: %v", string(body))
+	}
+}
+
+func TestAddHeroHandlerCORS(t *testing.T) {
+	req, err := http.NewRequest("POST",
+		fmt.Sprintf("%s/api/heroes", server.URL),
+		strings.NewReader(` { "name" : "Test" } `))
+	if err != nil {
+		t.Errorf("No err expected: %v", err)
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Errorf("No err expected: %v", err)
+	}
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	strBody := string(body)
+	if strings.Contains(strBody, "Test") == false {
+		t.Errorf("expect: Test in body, got: %v", strBody)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("expected status ok (200), but is: %v (%v)", resp.StatusCode, strBody)
+	}
+
+	// check Header: Access-Control-Allow-Origin
+	if resp.Header.Get("Access-Control-Allow-Origin") != "*" {
+		t.Errorf(`expect "*" but get: %v`, resp.Header.Get("Access-Control-Allow-Origin"))
 	}
 }
