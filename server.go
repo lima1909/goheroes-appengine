@@ -24,6 +24,7 @@ var (
 type Info struct {
 	HeroesService      string
 	EnvHeroServiceImpl string
+	Version            string
 }
 
 // handle CORS and the OPION method
@@ -62,7 +63,11 @@ func init() {
 	http.Handle("/", handler())
 
 	app = service.NewApp(db.NewMemService())
-	info = Info{HeroesService: "MemService", EnvHeroServiceImpl: "Not use in the moment"}
+	info = Info{
+		HeroesService:      "MemService",
+		EnvHeroServiceImpl: "Not use in the moment",
+		Version:            "1_NewRouter",
+	}
 	log.Println("Init is ready and start the server on: http://localhost:8080")
 }
 
