@@ -6,7 +6,6 @@ import (
 	"html/template"
 	"log"
 	"net/http"
-	"os"
 	"strconv"
 
 	"github.com/gorilla/mux"
@@ -27,28 +26,44 @@ type Info struct {
 	EnvHeroServiceImpl string
 }
 
-func init() {
-	info = Info{EnvHeroServiceImpl: os.Getenv("HERO_SERVICE_IMPL")}
+// handle CORS and the OPION method
+func corsAndOptionHandler(h http.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+		} else {
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+			w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 
+			h.ServeHTTP(w, r)
+		}
+	}
+}
+
+// create all used Handler
+func handler() http.Handler {
 	router := mux.NewRouter()
 
 	router.Handle("/", http.RedirectHandler("/info", http.StatusFound))
-
 	router.HandleFunc("/info", infoPage)
+
+	router.HandleFunc("/api/heroes", addHero).Methods("POST")
+
 	router.HandleFunc("/api/heroes", heroes)
 	router.HandleFunc("/api/heroes/", searchHeroes)
 	router.HandleFunc("/api/heroes/{id:[0-9]+}", heroID)
-	http.Handle("/", router)
 
-	if info.EnvHeroServiceImpl == "datastore" {
-		app = service.NewApp(db.DatastoreService{})
-		info.HeroesService = "DatastoreService"
-	} else {
-		app = service.NewApp(db.NewMemService())
-		info.HeroesService = "MemService"
-		log.Println("HeroServicem is MemService")
-		log.Println("Start server on: http://localhost:8080")
-	}
+	return corsAndOptionHandler(router)
+}
+
+func init() {
+
+	http.Handle("/", handler())
+
+	app = service.NewApp(db.NewMemService())
+	info = Info{HeroesService: "MemService", EnvHeroServiceImpl: "Not use in the moment"}
+	log.Println("Init is ready and start the server on: http://localhost:8080")
 }
 
 func main() {
@@ -70,15 +85,11 @@ func infoPage(w http.ResponseWriter, r *http.Request) {
 }
 
 func heroes(w http.ResponseWriter, r *http.Request) {
-	setHeaderOptions(w)
-
 	switch r.Method {
 	case "GET":
 		heroList(w, r)
-	case "OPTIONS":
-		fmt.Fprintf(w, string(http.StatusOK))
-	case "POST":
-		addHero(w, r)
+	// case "POST":
+	// 	addHero(w, r)
 	case "PUT":
 		updateHero(w, r)
 
@@ -88,11 +99,7 @@ func heroes(w http.ResponseWriter, r *http.Request) {
 }
 
 func heroID(w http.ResponseWriter, r *http.Request) {
-	setHeaderOptions(w)
-
 	switch r.Method {
-	case "OPTIONS":
-		fmt.Fprintf(w, string(http.StatusOK))
 	case "GET":
 		getHero(w, r)
 	case "DELETE":
@@ -257,8 +264,6 @@ func searchHeroes(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	setHeaderOptions(w)
-
 	b, err := json.Marshal(heroes)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -266,10 +271,4 @@ func searchHeroes(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fmt.Fprintf(w, "%s", string(b))
-}
-
-func setHeaderOptions(w http.ResponseWriter) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 }

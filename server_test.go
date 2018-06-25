@@ -3,14 +3,20 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"testing"
 
 	"github.com/gorilla/mux"
 	"github.com/lima1909/goheroes-appengine/service"
+)
+
+var (
+	server = httptest.NewServer(handler())
 )
 
 func init() {
@@ -45,6 +51,14 @@ func TestGetHeroes_heroList(t *testing.T) {
 	if resp.Header.Get("Content-Type") != "text/plain; charset=utf-8" {
 		t.Errorf(`expect "text/plain; charset=utf-8" but get: %v`, resp.Header.Get("Content-Type"))
 	}
+}
+
+func TestGetHeroes_heroListHandler(t *testing.T) {
+	resp, err := http.Get(fmt.Sprintf("%s/api/heroes", server.URL))
+	if err != nil {
+		t.Errorf("No err expected: %v", err)
+	}
+
 	// check Header: Access-Control-Allow-Origin
 	if resp.Header.Get("Access-Control-Allow-Origin") != "*" {
 		t.Errorf(`expect "*" but get: %v`, resp.Header.Get("Access-Control-Allow-Origin"))
@@ -79,6 +93,14 @@ func TestGetHeroID_getHero(t *testing.T) {
 		t.Errorf("expect Name: %v, but is: %v", hr.Name, hero.Name)
 	}
 
+}
+
+func TestGetHeroID_getHeroHandler(t *testing.T) {
+	resp, err := http.Get(fmt.Sprintf("%s/api/heroes/2", server.URL))
+	if err != nil {
+		t.Errorf("No err expected: %v", err)
+	}
+
 	// check Header: Access-Control-Allow-Origin
 	if resp.Header.Get("Access-Control-Allow-Origin") != "*" {
 		t.Errorf(`expect "*" but get: %v`, resp.Header.Get("Access-Control-Allow-Origin"))
@@ -109,6 +131,13 @@ func TestGetHeroID_searchHeroes(t *testing.T) {
 	if len(heroes) != 1 {
 		t.Errorf("expect one hero as search-result, but %v", len(heroes))
 	}
+}
+
+func TestGetHeroID_searchHeroesHandler(t *testing.T) {
+	resp, err := http.Get(fmt.Sprintf("%s/api/heroes/?name=%s", server.URL, url.QueryEscape("Adam O")))
+	if err != nil {
+		t.Errorf("No err expected: %v", err)
+	}
 
 	// check Header: Access-Control-Allow-Origin
 	if resp.Header.Get("Access-Control-Allow-Origin") != "*" {
@@ -117,33 +146,21 @@ func TestGetHeroID_searchHeroes(t *testing.T) {
 }
 
 func TestOptionsHeroID(t *testing.T) {
-	r := httptest.NewRequest("OPTIONS", "http://localhost:8080/api/heroes", nil)
-	w := httptest.NewRecorder()
-	heroID(w, r)
+	req, err := http.NewRequest("OPTIONS", fmt.Sprintf("%s/api/heroes", server.URL), nil)
+	if err != nil {
+		t.Errorf("No err expected: %v", err)
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Errorf("No err expected: %v", err)
+	}
 
-	resp := w.Result()
 	if resp.StatusCode != http.StatusOK {
 		t.Errorf("expect status ok (200), but is: %v", resp.StatusCode)
 	}
 
 	body, _ := ioutil.ReadAll(resp.Body)
-	if len(body) == 0 {
-		t.Errorf("expect body, but is: %v", string(body))
-	}
-}
-
-func TestOptionsHeroes(t *testing.T) {
-	r := httptest.NewRequest("OPTIONS", "http://localhost:8080/api/heroes", nil)
-	w := httptest.NewRecorder()
-	heroes(w, r)
-
-	resp := w.Result()
-	if resp.StatusCode != http.StatusOK {
-		t.Errorf("expect status ok (200), but is: %v", resp.StatusCode)
-	}
-
-	body, _ := ioutil.ReadAll(resp.Body)
-	if len(body) == 0 {
-		t.Errorf("expect body, but is: %v", string(body))
+	if len(body) != 0 {
+		t.Errorf("no body expect, but is: %v", string(body))
 	}
 }
