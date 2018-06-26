@@ -32,7 +32,18 @@ func NewMemService() *MemService {
 
 // List all Heroes, there are saved in the heroes array
 func (m MemService) List(c context.Context, name string) ([]service.Hero, error) {
-	return findHeroByName(m.heroes, name), nil
+	if name == "" {
+		return m.heroes, nil
+	}
+
+	hs := make([]service.Hero, 0)
+	for _, h := range m.heroes {
+		if strings.Contains(strings.ToUpper(h.Name), strings.ToUpper(name)) { //need uppercase to make it case insensitiv
+			hs = append(hs, h)
+			log.Printf("find hero: %v\n", h)
+		}
+	}
+	return hs, nil
 }
 
 // GetByID get Hero by the ID
@@ -86,42 +97,31 @@ func (m *MemService) UpdatePosition(c context.Context, h service.Hero, pos int64
 	newHeroesSlice := append(m.heroes[:oldPos], m.heroes[oldPos+1:]...)
 	m.heroes = append(newHeroesSlice[:pos], append([]service.Hero{h}, newHeroesSlice[pos:]...)...)
 
+	//just for debugging and logging
+	for i, hero := range m.heroes {
+		if hero.ID == h.ID {
+			log.Printf("update pos of %v from: %v to: %v\n", hero.Name, oldPos, i)
+			break
+		}
+	}
+
 	return &m.heroes[pos], nil
 }
 
 // Delete an Hero
 func (m *MemService) Delete(c context.Context, id int64) (*service.Hero, error) {
-	index := -1
+	hero := service.Hero{ID: -1}
+
 	for i, h := range m.heroes {
 		if h.ID == id {
-			index = i
-			break
+			hero = h
+			//remove from List
+			log.Printf("delete hero: %v\n", hero)
+			m.heroes = append(m.heroes[:i], m.heroes[i+1:]...)
+
+			return &hero, nil
 		}
-	}
-
-	if index != -1 {
-		//remove from List
-		h := &m.heroes[index]
-		log.Printf("delete hero: %v\n", h)
-		m.heroes = append(m.heroes[:index], m.heroes[index+1:]...)
-
-		return h, nil
 	}
 
 	return nil, service.ErrHeroNotFound
-}
-
-func findHeroByName(heroes []service.Hero, name string) []service.Hero {
-	if name == "" {
-		return heroes
-	}
-
-	hs := make([]service.Hero, 0)
-	for _, h := range heroes {
-		if strings.Contains(strings.ToUpper(h.Name), strings.ToUpper(name)) { //need uppercase to make it case insensitiv
-			hs = append(hs, h)
-			log.Printf("find hero: %v\n", h)
-		}
-	}
-	return hs
 }

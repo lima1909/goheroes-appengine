@@ -6,7 +6,6 @@ import (
 	"html/template"
 	"log"
 	"net/http"
-	"os"
 	"strconv"
 
 	"github.com/gorilla/mux"
@@ -16,39 +15,57 @@ import (
 	"google.golang.org/appengine"
 )
 
-var (
-	app  *service.App
-	info Info
-)
+var app *service.App
 
-// Info to the current system
-type Info struct {
-	HeroesService      string
-	EnvHeroServiceImpl string
+// handle CORS and the OPION method
+func corsAndOptionHandler(h http.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+		} else {
+			h.ServeHTTP(w, r)
+		}
+	}
 }
 
-func init() {
-	info = Info{EnvHeroServiceImpl: os.Getenv("HERO_SERVICE_IMPL")}
-
+// create all used Handler
+func handler() http.Handler {
 	router := mux.NewRouter()
 
 	router.Handle("/", http.RedirectHandler("/info", http.StatusFound))
-
 	router.HandleFunc("/info", infoPage)
-	router.HandleFunc("/api/heroes", heroes)
-	router.HandleFunc("/api/heroes/", searchHeroes)
-	router.HandleFunc("/api/heroes/{id:[0-9]+}", heroID)
-	http.Handle("/", router)
 
-	if info.EnvHeroServiceImpl == "datastore" {
-		app = service.NewApp(db.DatastoreService{})
-		info.HeroesService = "DatastoreService"
-	} else {
-		app = service.NewApp(db.NewMemService())
-		info.HeroesService = "MemService"
-		log.Println("HeroServicem is MemService")
-		log.Println("Start server on: http://localhost:8080")
-	}
+	url := "/api/heroes"
+	router.HandleFunc(url, heroList).Methods("GET")
+	router.HandleFunc(url, addHero).Methods("POST")
+	router.HandleFunc(url, switchHero).Methods("PUT").Queries("pos", "{pos}")
+	router.HandleFunc(url, updateHero).Methods("PUT")
+	router.HandleFunc(url, func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "invalid method: "+r.Method, http.StatusBadRequest)
+	}).Methods("DELETE", "PATH", "COPY", "HEAD", "LINK", "UNLINK", "PURGE", "LOCK", "UNLOCK", "VIEW", "PROPFIND")
+
+	urlWithID := "/api/heroes/{id:[0-9]+}"
+	router.HandleFunc(urlWithID, getHero).Methods("GET")
+	router.HandleFunc(urlWithID, deleteHero).Methods("DELETE")
+	router.HandleFunc(urlWithID, func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "invalid method: "+r.Method, http.StatusBadRequest)
+	}).Methods("PUT", "POST", "PATH", "COPY", "HEAD", "LINK", "UNLINK", "PURGE", "LOCK", "UNLOCK", "VIEW", "PROPFIND")
+
+	// TODO: not necessary anymore (only for the slash on the end)
+	router.HandleFunc("/api/heroes/", heroList)
+
+	return corsAndOptionHandler(router)
+}
+
+func init() {
+	http.Handle("/", handler())
+	app = service.NewApp(db.NewMemService())
+
+	log.Println("Init is ready and start the server on: http://localhost:8080")
 }
 
 func main() {
@@ -62,49 +79,15 @@ func infoPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = t.Execute(w, info)
+	err = t.Execute(w, app.Info)
 	if err != nil {
 		fmt.Fprintf(w, "Err: %v\n", err)
 		return
 	}
 }
 
-func heroes(w http.ResponseWriter, r *http.Request) {
-	setHeaderOptions(w)
-
-	switch r.Method {
-	case "GET":
-		heroList(w, r)
-	case "OPTIONS":
-		fmt.Fprintf(w, string(http.StatusOK))
-	case "POST":
-		addHero(w, r)
-	case "PUT":
-		updateHero(w, r)
-
-	default:
-		http.Error(w, "invalid method: "+r.Method, http.StatusBadRequest)
-	}
-}
-
-func heroID(w http.ResponseWriter, r *http.Request) {
-	setHeaderOptions(w)
-
-	switch r.Method {
-	case "OPTIONS":
-		fmt.Fprintf(w, string(http.StatusOK))
-	case "GET":
-		getHero(w, r)
-	case "DELETE":
-		deleteHero(w, r)
-
-	default:
-		http.Error(w, "invalid method: "+r.Method, http.StatusBadRequest)
-	}
-}
-
 func heroList(w http.ResponseWriter, r *http.Request) {
-	heroes, err := app.List(appengine.NewContext(r), "")
+	heroes, err := app.List(appengine.NewContext(r), r.URL.Query().Get("name"))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -120,10 +103,7 @@ func heroList(w http.ResponseWriter, r *http.Request) {
 }
 
 func addHero(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
-
-	hero := service.Hero{}
-	err := json.NewDecoder(r.Body).Decode(&hero)
+	hero, err := getHeroFromService(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -135,13 +115,7 @@ func addHero(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	b, err := json.Marshal(h)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	fmt.Fprintf(w, "%s", string(b))
+	writeHeroToClient(w, r, h)
 }
 
 func getHero(w http.ResponseWriter, r *http.Request) {
@@ -159,13 +133,7 @@ func getHero(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	b, err := json.Marshal(hero)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	fmt.Fprintf(w, "%s", string(b))
+	writeHeroToClient(w, r, hero)
 }
 
 func deleteHero(w http.ResponseWriter, r *http.Request) {
@@ -183,58 +151,59 @@ func deleteHero(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	b, err := json.Marshal(hero)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	fmt.Fprintf(w, "%s", string(b))
+	writeHeroToClient(w, r, hero)
 
 }
 
 func updateHero(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
-
-	hero := service.Hero{}
-	err := json.NewDecoder(r.Body).Decode(&hero)
+	hero, err := getHeroFromService(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	//is the position changed?
-	posString := ""
-	res, ok := r.URL.Query()["pos"]
-	if ok || len(res) == 1 {
-		posString = res[0]
+	h, err := app.Update(appengine.NewContext(r), hero)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
-	var h *service.Hero
-	if posString == "" {
-		//no new position - update name of hero
+	writeHeroToClient(w, r, h)
+}
 
-		h, err = app.Update(appengine.NewContext(r), hero)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-	} else {
-		// new position - update list of heroes
+func switchHero(w http.ResponseWriter, r *http.Request) {
 
-		pos, err := strconv.Atoi(posString)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		h, err = app.UpdatePosition(appengine.NewContext(r), hero, int64(pos))
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+	hero, err := getHeroFromService(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
+	pos := r.FormValue("pos")
+	posNb, err := strconv.Atoi(pos)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	h, err := app.UpdatePosition(appengine.NewContext(r), hero, int64(posNb))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	writeHeroToClient(w, r, h)
+
+}
+
+func getHeroFromService(r *http.Request) (service.Hero, error) {
+	defer r.Body.Close()
+
+	hero := service.Hero{}
+	return hero, json.NewDecoder(r.Body).Decode(&hero)
+}
+
+func writeHeroToClient(w http.ResponseWriter, r *http.Request, h *service.Hero) {
 	b, err := json.Marshal(h)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -242,34 +211,4 @@ func updateHero(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fmt.Fprintf(w, "%s", string(b))
-}
-
-func searchHeroes(w http.ResponseWriter, r *http.Request) {
-	name := ""
-	names, ok := r.URL.Query()["name"]
-	if ok || len(names) == 1 {
-		name = names[0]
-	}
-
-	heroes, err := app.List(appengine.NewContext(r), name)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	setHeaderOptions(w)
-
-	b, err := json.Marshal(heroes)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	fmt.Fprintf(w, "%s", string(b))
-}
-
-func setHeaderOptions(w http.ResponseWriter) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 }
