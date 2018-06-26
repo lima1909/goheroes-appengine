@@ -39,7 +39,7 @@ func TestAdd(t *testing.T) {
 	m := NewMemService()
 	size := len(m.heroes)
 
-	hero, err := m.Add(context.TODO(), service.Hero{Name: "Test"})
+	hero, err := m.Add(context.TODO(), "Test")
 	if err != nil {
 		t.Errorf("no err expected: %v", err)
 	}
@@ -59,7 +59,7 @@ func TestAdd(t *testing.T) {
 
 func TestAddAndList(t *testing.T) {
 	m := NewMemService()
-	m.Add(context.TODO(), service.Hero{Name: "Alex M"})
+	m.Add(context.TODO(), "Alex M")
 
 	fh, _ := m.List(context.TODO(), "Alex M")
 
@@ -86,7 +86,7 @@ func TestAddAndGetAndDelete(t *testing.T) {
 	size := len(m.heroes)
 
 	// Add
-	newHero, err := m.Add(context.TODO(), service.Hero{Name: "Test"})
+	newHero, err := m.Add(context.TODO(), "Test")
 	if err != nil {
 		t.Errorf("no err expected: %v", err)
 	}
@@ -134,9 +134,9 @@ func TestUpdate(t *testing.T) {
 
 func TestAddAndSearch(t *testing.T) {
 	m := NewMemService()
-	m.Add(context.TODO(), service.Hero{Name: "Abc"})
-	m.Add(context.TODO(), service.Hero{Name: "Abcd"})
-	m.Add(context.TODO(), service.Hero{Name: "Abcde"})
+	m.Add(context.TODO(), "Abc")
+	m.Add(context.TODO(), "Abcd")
+	m.Add(context.TODO(), "Abcde")
 
 	fh, _ := m.List(context.TODO(), "abc")
 	if 3 != len(fh) {

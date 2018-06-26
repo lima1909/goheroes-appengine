@@ -197,7 +197,7 @@ func TestOptionsCORS(t *testing.T) {
 func TestAddHeroHandlerCORS(t *testing.T) {
 	req, err := http.NewRequest("POST",
 		fmt.Sprintf("%s/api/heroes", server.URL),
-		strings.NewReader(` { "name" : "Test" } `))
+		strings.NewReader("Test"))
 	if err != nil {
 		t.Errorf("No err expected: %v", err)
 	}
