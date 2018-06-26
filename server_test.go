@@ -274,3 +274,31 @@ func TestDeleteHero_HandlerCORS(t *testing.T) {
 		t.Errorf(`expect "*" but get: %v`, resp.Header.Get("Access-Control-Allow-Origin"))
 	}
 }
+
+func TestUpdateHero(t *testing.T) {
+	req, err := http.NewRequest("PUT",
+		fmt.Sprintf("%s/api/heroes", server.URL),
+		strings.NewReader(` { "name" : "Test", "id" : 1} `))
+	if err != nil {
+		t.Errorf("No err expected: %v", err)
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Errorf("No err expected: %v", err)
+	}
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	strBody := string(body)
+	if strings.Contains(strBody, "Test") == false {
+		t.Errorf("expect: Test in body, got: %v", strBody)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("expected status ok (200), but is: %v (%v)", resp.StatusCode, strBody)
+	}
+
+	// check Header: Access-Control-Allow-Origin
+	if resp.Header.Get("Access-Control-Allow-Origin") != "*" {
+		t.Errorf(`expect "*" but get: %v`, resp.Header.Get("Access-Control-Allow-Origin"))
+	}
+}
