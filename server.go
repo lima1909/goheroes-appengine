@@ -42,6 +42,7 @@ func handler() http.Handler {
 	url := "/api/heroes"
 	router.HandleFunc(url, heroList).Methods("GET")
 	router.HandleFunc(url, addHero).Methods("POST")
+	router.HandleFunc(url, switchHero).Methods("PUT").Queries("pos", "{pos}")
 	router.HandleFunc(url, updateHero).Methods("PUT")
 	router.HandleFunc(url, func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid method: "+r.Method, http.StatusBadRequest)
@@ -117,13 +118,7 @@ func addHero(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	b, err := json.Marshal(h)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	fmt.Fprintf(w, "%s", string(b))
+	writeHeroToClient(w, r, h)
 }
 
 func getHero(w http.ResponseWriter, r *http.Request) {
@@ -141,13 +136,7 @@ func getHero(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	b, err := json.Marshal(hero)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	fmt.Fprintf(w, "%s", string(b))
+	writeHeroToClient(w, r, hero)
 }
 
 func deleteHero(w http.ResponseWriter, r *http.Request) {
@@ -165,58 +154,61 @@ func deleteHero(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	b, err := json.Marshal(hero)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	fmt.Fprintf(w, "%s", string(b))
+	writeHeroToClient(w, r, hero)
 
 }
 
 func updateHero(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
-
-	hero := service.Hero{}
-	err := json.NewDecoder(r.Body).Decode(&hero)
+	hero, err := getHeroFromService(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	//is the position changed?
-	posString := ""
-	res, ok := r.URL.Query()["pos"]
-	if ok || len(res) == 1 {
-		posString = res[0]
+	h, err := app.Update(appengine.NewContext(r), hero)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
-	var h *service.Hero
-	if posString == "" {
-		//no new position - update name of hero
+	writeHeroToClient(w, r, h)
+}
 
-		h, err = app.Update(appengine.NewContext(r), hero)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-	} else {
-		// new position - update list of heroes
+func switchHero(w http.ResponseWriter, r *http.Request) {
 
-		pos, err := strconv.Atoi(posString)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		h, err = app.UpdatePosition(appengine.NewContext(r), hero, int64(pos))
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+	hero, err := getHeroFromService(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
+	pos := r.FormValue("pos")
+	posNb, err := strconv.Atoi(pos)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	h, err := app.UpdatePosition(appengine.NewContext(r), hero, int64(posNb))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	writeHeroToClient(w, r, h)
+
+}
+
+func getHeroFromService(r *http.Request) (service.Hero, error) {
+	defer r.Body.Close()
+
+	hero := service.Hero{}
+	err := json.NewDecoder(r.Body).Decode(&hero)
+
+	return hero, err
+}
+
+func writeHeroToClient(w http.ResponseWriter, r *http.Request, h *service.Hero) {
 	b, err := json.Marshal(h)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
