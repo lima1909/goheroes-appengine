@@ -15,17 +15,7 @@ import (
 	"google.golang.org/appengine"
 )
 
-var (
-	app  *service.App
-	info Info
-)
-
-// Info to the current system
-type Info struct {
-	HeroesService      string
-	EnvHeroServiceImpl string
-	Version            string
-}
+var app *service.App
 
 // handle CORS and the OPION method
 func corsAndOptionHandler(h http.Handler) http.HandlerFunc {
@@ -59,15 +49,9 @@ func handler() http.Handler {
 }
 
 func init() {
-
 	http.Handle("/", handler())
-
 	app = service.NewApp(db.NewMemService())
-	info = Info{
-		HeroesService:      "MemService",
-		EnvHeroServiceImpl: "Not use in the moment",
-		Version:            "1_NewRouter",
-	}
+
 	log.Println("Init is ready and start the server on: http://localhost:8080")
 }
 
@@ -82,7 +66,7 @@ func infoPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = t.Execute(w, info)
+	err = t.Execute(w, app.Info)
 	if err != nil {
 		fmt.Fprintf(w, "Err: %v\n", err)
 		return
