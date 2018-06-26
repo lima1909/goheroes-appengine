@@ -302,3 +302,25 @@ func TestUpdateHero(t *testing.T) {
 		t.Errorf(`expect "*" but get: %v`, resp.Header.Get("Access-Control-Allow-Origin"))
 	}
 }
+
+func TestGetHeroFromService(t *testing.T) {
+	r := httptest.NewRequest("GET", "http://localhost:8080/api/heroes", strings.NewReader(` { "name" : "Test" } `))
+	hero, err := getHeroFromService(r)
+	if err != nil {
+		t.Errorf("no err expected, got: %v", err)
+	}
+	if hero.Name != "Test" {
+		t.Errorf("expect hero name: Test, got: %v", hero.Name)
+	}
+	if hero.ID != 0 {
+		t.Errorf("expect hero ID == 0, got: %v", hero.ID)
+	}
+}
+
+func TestGetHeroFromServiceFail(t *testing.T) {
+	r := httptest.NewRequest("GET", "http://localhost:8080/api/heroes", strings.NewReader(` { "name" : "Test"  `))
+	_, err := getHeroFromService(r)
+	if err == nil {
+		t.Errorf("expected err, got nil")
+	}
+}

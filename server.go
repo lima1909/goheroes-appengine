@@ -103,10 +103,7 @@ func heroList(w http.ResponseWriter, r *http.Request) {
 }
 
 func addHero(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
-
-	hero := service.Hero{}
-	err := json.NewDecoder(r.Body).Decode(&hero)
+	hero, err := getHeroFromService(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -203,9 +200,7 @@ func getHeroFromService(r *http.Request) (service.Hero, error) {
 	defer r.Body.Close()
 
 	hero := service.Hero{}
-	err := json.NewDecoder(r.Body).Decode(&hero)
-
-	return hero, err
+	return hero, json.NewDecoder(r.Body).Decode(&hero)
 }
 
 func writeHeroToClient(w http.ResponseWriter, r *http.Request, h *service.Hero) {
