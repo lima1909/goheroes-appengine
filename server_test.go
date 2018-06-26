@@ -276,6 +276,8 @@ func TestDeleteHero_HandlerCORS(t *testing.T) {
 }
 
 func TestUpdateHero(t *testing.T) {
+	heroBefore, _ := app.GetByID(context.TODO(), 1)
+
 	req, err := http.NewRequest("PUT",
 		fmt.Sprintf("%s/api/heroes", server.URL),
 		strings.NewReader(` { "name" : "Test", "id" : 1} `))
@@ -295,6 +297,18 @@ func TestUpdateHero(t *testing.T) {
 
 	if resp.StatusCode != http.StatusOK {
 		t.Errorf("expected status ok (200), but is: %v (%v)", resp.StatusCode, strBody)
+	}
+
+	heroAfter := service.Hero{}
+	err = json.Unmarshal(body, &heroAfter)
+	if err != nil {
+		t.Errorf("No err expected: %v", err)
+	}
+	if heroBefore.ID != heroAfter.ID {
+		t.Errorf("Heroes are not the same: %v != %v", heroBefore.ID, heroAfter.ID)
+	}
+	if heroBefore.Name == heroAfter.Name {
+		t.Errorf("No update, the Heroes name is the same: %v != %v", heroBefore.Name, heroAfter.Name)
 	}
 
 	// check Header: Access-Control-Allow-Origin
