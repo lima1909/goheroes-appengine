@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"strconv"
@@ -103,13 +104,16 @@ func heroList(w http.ResponseWriter, r *http.Request) {
 }
 
 func addHero(w http.ResponseWriter, r *http.Request) {
-	hero, err := getHeroFromService(r)
+	defer r.Body.Close()
+
+	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	h, err := app.Add(appengine.NewContext(r), hero)
+	heroName := string(body)
+	h, err := app.Add(appengine.NewContext(r), heroName)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

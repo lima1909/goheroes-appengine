@@ -24,7 +24,7 @@ type Hero struct {
 type HeroService interface {
 	List(c context.Context, name string) ([]Hero, error)
 	GetByID(c context.Context, id int64) (*Hero, error)
-	Add(c context.Context, h Hero) (*Hero, error)
+	Add(c context.Context, n string) (*Hero, error)
 	Update(c context.Context, h Hero) (*Hero, error)
 	UpdatePosition(c context.Context, h Hero, pos int64) (*Hero, error)
 	Delete(c context.Context, id int64) (*Hero, error)

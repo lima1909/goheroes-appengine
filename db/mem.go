@@ -57,9 +57,10 @@ func (m MemService) GetByID(c context.Context, id int64) (*service.Hero, error) 
 }
 
 // Add an Hero
-func (m *MemService) Add(c context.Context, h service.Hero) (*service.Hero, error) {
+func (m *MemService) Add(c context.Context, name string) (*service.Hero, error) {
 	m.maxID++
-	h.ID = m.maxID
+
+	h := service.Hero{Name: name, ID: m.maxID}
 	m.heroes = append(m.heroes, h)
 	log.Printf("add hero: %v\n", h)
 	return &h, nil
