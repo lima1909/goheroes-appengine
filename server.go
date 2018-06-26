@@ -39,15 +39,22 @@ func handler() http.Handler {
 	router.Handle("/", http.RedirectHandler("/info", http.StatusFound))
 	router.HandleFunc("/info", infoPage)
 
-	router.HandleFunc("/api/heroes", heroList).Methods("GET")
-	router.HandleFunc("/api/heroes", addHero).Methods("POST")
-	router.HandleFunc("/api/heroes", updateHero).Methods("PUT")
-	router.HandleFunc("/api/heroes", func(w http.ResponseWriter, r *http.Request) {
+	url := "/api/heroes"
+	router.HandleFunc(url, heroList).Methods("GET")
+	router.HandleFunc(url, addHero).Methods("POST")
+	router.HandleFunc(url, updateHero).Methods("PUT")
+	router.HandleFunc(url, func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid method: "+r.Method, http.StatusBadRequest)
 	}).Methods("DELETE", "PATH", "COPY", "HEAD", "LINK", "UNLINK", "PURGE", "LOCK", "UNLOCK", "VIEW", "PROPFIND")
 
+	urlWithID := "/api/heroes/{id:[0-9]+}"
+	router.HandleFunc(urlWithID, getHero).Methods("GET")
+	router.HandleFunc(urlWithID, deleteHero).Methods("DELETE")
+	router.HandleFunc(urlWithID, func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "invalid method: "+r.Method, http.StatusBadRequest)
+	}).Methods("PUT", "POST", "PATH", "COPY", "HEAD", "LINK", "UNLINK", "PURGE", "LOCK", "UNLOCK", "VIEW", "PROPFIND")
+
 	router.HandleFunc("/api/heroes/", searchHeroes)
-	router.HandleFunc("/api/heroes/{id:[0-9]+}", heroID)
 
 	return corsAndOptionHandler(router)
 }
@@ -74,18 +81,6 @@ func infoPage(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Fprintf(w, "Err: %v\n", err)
 		return
-	}
-}
-
-func heroID(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case "GET":
-		getHero(w, r)
-	case "DELETE":
-		deleteHero(w, r)
-
-	default:
-		http.Error(w, "invalid method: "+r.Method, http.StatusBadRequest)
 	}
 }
 
@@ -231,13 +226,7 @@ func updateHero(w http.ResponseWriter, r *http.Request) {
 }
 
 func searchHeroes(w http.ResponseWriter, r *http.Request) {
-	name := ""
-	names, ok := r.URL.Query()["name"]
-	if ok || len(names) == 1 {
-		name = names[0]
-	}
-
-	heroes, err := app.List(appengine.NewContext(r), name)
+	heroes, err := app.List(appengine.NewContext(r), r.URL.Query().Get("name"))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

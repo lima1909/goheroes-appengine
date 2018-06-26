@@ -10,10 +10,7 @@ import (
 func TestList(t *testing.T) {
 	m := NewMemService()
 
-	fh, err := m.List(context.TODO(), "")
-	if err != nil {
-		t.Errorf("no err expected: %v", err)
-	}
+	fh, _ := m.List(context.TODO(), "")
 
 	if len(m.heroes) != len(fh) {
 		t.Errorf("%v != %v", len(m.heroes), len(fh))
@@ -23,12 +20,18 @@ func TestList(t *testing.T) {
 func TestListFilter(t *testing.T) {
 	m := NewMemService()
 
-	fh, err := m.List(context.TODO(), "Alex M")
-	if err != nil {
-		t.Errorf("no err expected: %v", err)
-	}
+	fh, _ := m.List(context.TODO(), "Alex M")
 	if 1 != len(fh) {
 		t.Errorf("%v != %v", 1, len(fh))
+	}
+}
+
+func TestListFilterNotFound(t *testing.T) {
+	m := NewMemService()
+
+	fh, _ := m.List(context.TODO(), "not available")
+	if 0 != len(fh) {
+		t.Errorf("%v != %v", 0, len(fh))
 	}
 }
 
@@ -58,10 +61,8 @@ func TestAddAndList(t *testing.T) {
 	m := NewMemService()
 	m.Add(context.TODO(), service.Hero{Name: "Alex M"})
 
-	fh, err := m.List(context.TODO(), "Alex M")
-	if err != nil {
-		t.Errorf("no err expected: %v", err)
-	}
+	fh, _ := m.List(context.TODO(), "Alex M")
+
 	if 2 != len(fh) {
 		t.Errorf("%v != %v", 2, len(fh))
 	}
@@ -137,26 +138,17 @@ func TestAddAndSearch(t *testing.T) {
 	m.Add(context.TODO(), service.Hero{Name: "Abcd"})
 	m.Add(context.TODO(), service.Hero{Name: "Abcde"})
 
-	fh, err := m.List(context.TODO(), "abc")
-	if err != nil {
-		t.Errorf("no err expected: %v", err)
-	}
+	fh, _ := m.List(context.TODO(), "abc")
 	if 3 != len(fh) {
 		t.Errorf("%v != %v", 3, len(fh))
 	}
 
-	fh, err = m.List(context.TODO(), "Abc")
-	if err != nil {
-		t.Errorf("no err expected: %v", err)
-	}
+	fh, _ = m.List(context.TODO(), "Abc")
 	if 3 != len(fh) {
 		t.Errorf("%v != %v", 3, len(fh))
 	}
 
-	fh, err = m.List(context.TODO(), "cd")
-	if err != nil {
-		t.Errorf("no err expected: %v", err)
-	}
+	fh, _ = m.List(context.TODO(), "cd")
 	if 2 != len(fh) {
 		t.Errorf("%v != %v", 2, len(fh))
 	}
