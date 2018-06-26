@@ -54,7 +54,8 @@ func handler() http.Handler {
 		http.Error(w, "invalid method: "+r.Method, http.StatusBadRequest)
 	}).Methods("PUT", "POST", "PATH", "COPY", "HEAD", "LINK", "UNLINK", "PURGE", "LOCK", "UNLOCK", "VIEW", "PROPFIND")
 
-	router.HandleFunc("/api/heroes/", searchHeroes)
+	// TODO: not necessary anymore (only for the slash on the end)
+	router.HandleFunc("/api/heroes/", heroList)
 
 	return corsAndOptionHandler(router)
 }
@@ -85,7 +86,7 @@ func infoPage(w http.ResponseWriter, r *http.Request) {
 }
 
 func heroList(w http.ResponseWriter, r *http.Request) {
-	heroes, err := app.List(appengine.NewContext(r), "")
+	heroes, err := app.List(appengine.NewContext(r), r.URL.Query().Get("name"))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -217,22 +218,6 @@ func updateHero(w http.ResponseWriter, r *http.Request) {
 	}
 
 	b, err := json.Marshal(h)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	fmt.Fprintf(w, "%s", string(b))
-}
-
-func searchHeroes(w http.ResponseWriter, r *http.Request) {
-	heroes, err := app.List(appengine.NewContext(r), r.URL.Query().Get("name"))
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	b, err := json.Marshal(heroes)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

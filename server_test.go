@@ -112,7 +112,7 @@ func TestSearchHeroes(t *testing.T) {
 	q.Add("name", "Jasmin")
 	r.URL.RawQuery = q.Encode()
 	w := httptest.NewRecorder()
-	searchHeroes(w, r)
+	heroList(w, r)
 
 	// check status code
 	resp := w.Result()
@@ -135,7 +135,7 @@ func TestSearchHeroes(t *testing.T) {
 func TestSearchHeroesWithEmptyName(t *testing.T) {
 	r := httptest.NewRequest("GET", "http://localhost:8080/api/heroes", nil)
 	w := httptest.NewRecorder()
-	searchHeroes(w, r)
+	heroList(w, r)
 
 	// check status code
 	resp := w.Result()
