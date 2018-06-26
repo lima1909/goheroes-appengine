@@ -316,7 +316,6 @@ func TestUpdateHero(t *testing.T) {
 		t.Errorf(`expect "*" but get: %v`, resp.Header.Get("Access-Control-Allow-Origin"))
 	}
 }
-<<<<<<< HEAD
 
 func TestGetHeroFromService(t *testing.T) {
 	r := httptest.NewRequest("GET", "http://localhost:8080/api/heroes", strings.NewReader(` { "name" : "Test" } `))
@@ -339,8 +338,7 @@ func TestGetHeroFromServiceFail(t *testing.T) {
 		t.Errorf("expected err, got nil")
 	}
 }
-||||||| merged common ancestors
-=======
+
 func TestSwitchHero(t *testing.T) {
 	req, err := http.NewRequest("PUT",
 		fmt.Sprintf("%s/api/heroes?pos=4", server.URL),
@@ -389,4 +387,3 @@ func TestSwitchHero(t *testing.T) {
 		t.Errorf(`expect "*" but get: %v`, resp.Header.Get("Access-Control-Allow-Origin"))
 	}
 }
->>>>>>> add test for switchHero in server.go
