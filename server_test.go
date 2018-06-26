@@ -387,3 +387,21 @@ func TestSwitchHero(t *testing.T) {
 		t.Errorf(`expect "*" but get: %v`, resp.Header.Get("Access-Control-Allow-Origin"))
 	}
 }
+
+func TestWriteHeroToClient(t *testing.T) {
+	r := httptest.NewRequest("GET", "http://localhost:8080/api/heroes", nil)
+	w := httptest.NewRecorder()
+
+	hero, err := app.GetByID(context.TODO(), 1)
+	if err != nil {
+		t.Errorf("No err expected: %v", err)
+	}
+
+	writeHeroToClient(w, r, hero)
+
+	body, _ := ioutil.ReadAll(w.Body)
+	strBody := string(body)
+	if strings.Contains(strBody, "Jasmin") == false {
+		t.Errorf("expect: Jasmin in body, got: %v", strBody)
+	}
+}
