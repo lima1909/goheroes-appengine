@@ -15,7 +15,6 @@ var (
 
 // Hero the struct
 type Hero struct {
-	Key  int64  `json:"key" datastore:"-"`
 	ID   int64  `json:"id"`
 	Name string `json:"name"`
 }

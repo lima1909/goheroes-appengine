@@ -40,7 +40,7 @@ func (DatastoreService) List(c context.Context, name string) ([]service.Hero, er
 
 	log.Infof(c, "----- Find %v Keys for Heroes", len(keys))
 	for i, k := range keys {
-		heroes[i].Key = k.IntID()
+		heroes[i].ID = k.IntID()
 	}
 
 	return heroes, nil
@@ -57,7 +57,7 @@ func (DatastoreService) GetByID(c context.Context, id int64) (*service.Hero, err
 	}
 
 	if len(hero) > 0 && len(ks) > 0 {
-		hero[0].Key = ks[0].IntID()
+		hero[0].ID = ks[0].IntID()
 		return &hero[0], nil
 	}
 
@@ -74,7 +74,7 @@ func (DatastoreService) Add(c context.Context, h service.Hero) (*service.Hero, e
 		return nil, fmt.Errorf("Err by datastore.Put: %v", err)
 	}
 
-	h.Key = k.IntID()
+	h.ID = k.IntID()
 	return &h, nil
 }
 
@@ -87,12 +87,12 @@ func (ds DatastoreService) Update(c context.Context, h service.Hero) (*service.H
 		return nil, fmt.Errorf("Err by datastore.Update (GetByID: %v", err)
 	}
 
-	k := datastore.NewKey(c, KIND, "", hf.Key, nil)
+	k := datastore.NewKey(c, KIND, "", hf.ID, nil)
 	_, err = datastore.Put(c, k, &h)
 	if err != nil {
 		return nil, fmt.Errorf("Err by datastore.Update Hero: %v with err: %v", h, err)
 	}
-	h.Key = k.IntID()
+	h.ID = k.IntID()
 
 	return &h, nil
 }
@@ -112,7 +112,7 @@ func (ds DatastoreService) Delete(c context.Context, id int64) (*service.Hero, e
 		return nil, fmt.Errorf("Err by datastore.Delete (GetByID: %v", err)
 	}
 
-	k := datastore.NewKey(c, KIND, "", hf.Key, nil)
+	k := datastore.NewKey(c, KIND, "", hf.ID, nil)
 	err = datastore.Delete(c, k)
 	if err != nil {
 		return nil, fmt.Errorf("Err by datastore.Delete: %v", err)
