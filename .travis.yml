@@ -3,11 +3,11 @@ sudo: false
 
 matrix:
   include:
-    - go: 1.9.x
+#    - go: 1.9.x
     - os: linux
       go: 1.10.x
-    - os: osx
-      go: 1.10.x
+#    - os: osx
+#      go: 1.10.x
 
 install:
   - # Skip
