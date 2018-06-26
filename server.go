@@ -39,9 +39,13 @@ func handler() http.Handler {
 	router.Handle("/", http.RedirectHandler("/info", http.StatusFound))
 	router.HandleFunc("/info", infoPage)
 
+	router.HandleFunc("/api/heroes", heroList).Methods("GET")
 	router.HandleFunc("/api/heroes", addHero).Methods("POST")
+	router.HandleFunc("/api/heroes", updateHero).Methods("PUT")
+	router.HandleFunc("/api/heroes", func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "invalid method: "+r.Method, http.StatusBadRequest)
+	}).Methods("DELETE", "PATH", "COPY", "HEAD", "LINK", "UNLINK", "PURGE", "LOCK", "UNLOCK", "VIEW", "PROPFIND")
 
-	router.HandleFunc("/api/heroes", heroes)
 	router.HandleFunc("/api/heroes/", searchHeroes)
 	router.HandleFunc("/api/heroes/{id:[0-9]+}", heroID)
 
@@ -70,20 +74,6 @@ func infoPage(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Fprintf(w, "Err: %v\n", err)
 		return
-	}
-}
-
-func heroes(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case "GET":
-		heroList(w, r)
-	// case "POST":
-	// 	addHero(w, r)
-	case "PUT":
-		updateHero(w, r)
-
-	default:
-		http.Error(w, "invalid method: "+r.Method, http.StatusBadRequest)
 	}
 }
 

@@ -24,10 +24,10 @@ func init() {
 	os.Setenv("HERO_SERVICE_IMPL", "NotSet")
 }
 
-func TestGetHeroes_heroList(t *testing.T) {
+func TestHeroList(t *testing.T) {
 	r := httptest.NewRequest("GET", "http://localhost:8080/api/heroes", nil)
 	w := httptest.NewRecorder()
-	heroes(w, r)
+	heroList(w, r)
 
 	// check status code
 	resp := w.Result()
@@ -43,18 +43,14 @@ func TestGetHeroes_heroList(t *testing.T) {
 		t.Errorf("No err expected: %v", err)
 	}
 
+	// check the lengths from Service with http-call
 	hs, _ := app.List(context.TODO(), "")
 	if len(hs) != len(heroes) {
 		t.Errorf("heroes expected: %v and get: %v", len(hs), len(heroes))
 	}
-
-	// check Header: contenttype
-	if resp.Header.Get("Content-Type") != "text/plain; charset=utf-8" {
-		t.Errorf(`expect "text/plain; charset=utf-8" but get: %v`, resp.Header.Get("Content-Type"))
-	}
 }
 
-func TestHeroListHandlerCORS(t *testing.T) {
+func TestHeroList_HandlerCORS(t *testing.T) {
 	resp, err := http.Get(fmt.Sprintf("%s/api/heroes", server.URL))
 	if err != nil {
 		t.Errorf("No err expected: %v", err)
@@ -93,10 +89,9 @@ func TestGetHeroID(t *testing.T) {
 	if hero.Name != hr.Name {
 		t.Errorf("expect Name: %v, but is: %v", hr.Name, hero.Name)
 	}
-
 }
 
-func TestGetHeroIDHeroHandlerCORS(t *testing.T) {
+func TestGetHeroID_HandlerCORS(t *testing.T) {
 	resp, err := http.Get(fmt.Sprintf("%s/api/heroes/2", server.URL))
 	if err != nil {
 		t.Errorf("No err expected: %v", err)
@@ -134,7 +129,7 @@ func TestSearchHeroes(t *testing.T) {
 	}
 }
 
-func TestSearchHeroesHandlerCORS(t *testing.T) {
+func TestSearchHeroes_HandlerCORS(t *testing.T) {
 	resp, err := http.Get(fmt.Sprintf("%s/api/heroes/?name=%s", server.URL, url.QueryEscape("Adam O")))
 	if err != nil {
 		t.Errorf("No err expected: %v", err)
