@@ -97,6 +97,14 @@ func (m *MemService) UpdatePosition(c context.Context, h service.Hero, pos int64
 	newHeroesSlice := append(m.heroes[:oldPos], m.heroes[oldPos+1:]...)
 	m.heroes = append(newHeroesSlice[:pos], append([]service.Hero{h}, newHeroesSlice[pos:]...)...)
 
+	//just for debugging and logging
+	for i, hero := range m.heroes {
+		if hero.ID == h.ID {
+			log.Printf("update pos of %v from: %v to: %v\n", hero.Name, oldPos, i)
+			break
+		}
+	}
+
 	return &m.heroes[pos], nil
 }
 

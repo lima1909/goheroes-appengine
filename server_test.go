@@ -316,6 +316,7 @@ func TestUpdateHero(t *testing.T) {
 		t.Errorf(`expect "*" but get: %v`, resp.Header.Get("Access-Control-Allow-Origin"))
 	}
 }
+<<<<<<< HEAD
 
 func TestGetHeroFromService(t *testing.T) {
 	r := httptest.NewRequest("GET", "http://localhost:8080/api/heroes", strings.NewReader(` { "name" : "Test" } `))
@@ -338,3 +339,54 @@ func TestGetHeroFromServiceFail(t *testing.T) {
 		t.Errorf("expected err, got nil")
 	}
 }
+||||||| merged common ancestors
+=======
+func TestSwitchHero(t *testing.T) {
+	req, err := http.NewRequest("PUT",
+		fmt.Sprintf("%s/api/heroes?pos=4", server.URL),
+		strings.NewReader(` { "name" : "Jasmin", "id" : 1} `))
+	if err != nil {
+		t.Errorf("No err expected: %v", err)
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Errorf("No err expected: %v", err)
+	}
+
+	hero, err := app.GetByID(context.TODO(), 1)
+	if err != nil {
+		t.Errorf("No err expected: %v", err)
+	}
+
+	heroes, err := app.List(context.TODO(), "")
+	if err != nil {
+		t.Errorf("No err expected: %v", err)
+	}
+
+	pos := -1
+	for i, h := range heroes {
+		if h.ID == hero.ID {
+			pos = i
+			break
+		}
+	}
+	if pos != 4 {
+		t.Errorf("expected new pos 4, got %v ", pos)
+	}
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	strBody := string(body)
+	if strings.Contains(strBody, "Jasmin") == false {
+		t.Errorf("expect: Jasmin in body, got: %v", strBody)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("expected status ok (200), but is: %v (%v)", resp.StatusCode, strBody)
+	}
+
+	// check Header: Access-Control-Allow-Origin
+	if resp.Header.Get("Access-Control-Allow-Origin") != "*" {
+		t.Errorf(`expect "*" but get: %v`, resp.Header.Get("Access-Control-Allow-Origin"))
+	}
+}
+>>>>>>> add test for switchHero in server.go
