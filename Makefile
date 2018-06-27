@@ -38,3 +38,7 @@ server:
 endpoint:
 	$(GCLOUD_CMD) endpoints services list
 	$(GCLOUD_CMD) endpoints services deploy swagger.yaml
+
+test:
+	go tool vet .
+	go test -race ./...
