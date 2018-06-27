@@ -7,10 +7,12 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 
 	"github.com/gorilla/mux"
 	"github.com/lima1909/goheroes-appengine/db"
+	"github.com/lima1909/goheroes-appengine/ps"
 	"github.com/lima1909/goheroes-appengine/service"
 
 	"google.golang.org/appengine"
@@ -64,7 +66,12 @@ func handler() http.Handler {
 
 func init() {
 	http.Handle("/", handler())
-	app = service.NewApp(db.NewMemService())
+
+	if os.Getenv("HERO_SERVICE_IMPL") == "pubsub" {
+		app = service.NewApp(ps.NewHeroService(db.NewMemService()))
+	} else {
+		app = service.NewApp(db.NewMemService())
+	}
 
 	log.Println("Init is ready and start the server on: http://localhost:8080")
 }
