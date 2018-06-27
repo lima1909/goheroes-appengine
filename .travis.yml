@@ -3,14 +3,9 @@ sudo: false
 
 go:
   - "1.10.x"
-#  - master
-
-before_install:
-  - go get -u github.com/kisielk/errcheck
-
+  - master
 
 script:
   - go get -t ./...
   - go tool vet .
   - go test -race ./...
-  - errcheck
