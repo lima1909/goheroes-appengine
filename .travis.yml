@@ -9,9 +9,10 @@ go:
 
 
 jobs:
-  exclude:
+  include:
     - go: master
-      if: ${TRAVIS_BRANCH} != master
+      branch: master
+    - go: "1.10.x"
       
 
 # ------------------------------------
