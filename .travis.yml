@@ -7,15 +7,12 @@ go:
   - "1.10.x"
   - master
 
+
 jobs:
-  include:
-    - go: "1.10.x"
-      if: branch = master
-    - go: "1.10.x"
-      if: NOT branch = master
-    - go: master
-      if: branch = master
-      
+  exclude:
+    - 
+      if: branch != master
+      go: master
 
 # ------------------------------------
 # definition for the build starts her:
