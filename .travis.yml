@@ -8,10 +8,14 @@ go:
   - master
 
 jobs:
-  exclude:
-    - 
-      if: branch != master
-      go: master
+  include:
+    - go: "1.10.x"
+      if: branch = master
+    - go: "1.10.x"
+      if: NOT branch = master
+    - go: master
+      if: branch = master
+      
 
 # ------------------------------------
 # definition for the build starts her:
