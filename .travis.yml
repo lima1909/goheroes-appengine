@@ -10,9 +10,9 @@ go:
 
 jobs:
   exclude:
-    - 
-      if: branch != master
-      go: master
+    - go: master
+      if: ${TRAVIS_BRANCH} != master
+      
 
 # ------------------------------------
 # definition for the build starts her:
@@ -22,6 +22,7 @@ before_script:
 # https://github.com/golangci/golangci-lint
 
 script:
+  - echo "current branch ${TRAVIS_BRANCH}"
   - make test
 
 after_success:
