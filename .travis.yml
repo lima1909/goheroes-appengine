@@ -1,10 +1,29 @@
 language: go
 sudo: false
+git:
+  depth: 2
 
 go:
   - "1.10.x"
   - master
 
-script:
+matrix:
+  exclude:
+    - go: master
+      if: branch != master      
+
+
+# ------------------------------------
+# definition for the build starts her:
+# ------------------------------------
+before_script:
   - go get -t ./...
+# https://github.com/golangci/golangci-lint
+
+script:
   - make test
+
+after_success:
+  - echo "Jeh, I am done ... ;-)"
+after_failure:
+  - echo ":-( :-( :-( :-( :-("
