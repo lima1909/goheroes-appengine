@@ -10,9 +10,14 @@ go:
 
 jobs:
   include:
-    - go: master
-      branch: master
-    - go: "1.10.x"
+    - 
+      if: branch = master
+      go: master
+    - 
+      if: branch != master
+      go: "1.10.x"
+
+
       
 
 # ------------------------------------
