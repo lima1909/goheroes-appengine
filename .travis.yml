@@ -7,11 +7,11 @@ go:
   - "1.10.x"
   - master
 
-matrix:
+jobs:
   exclude:
-    - go: master
-      if: branch != master      
-
+    - 
+      if: branch != master
+      go: master
 
 # ------------------------------------
 # definition for the build starts her:
