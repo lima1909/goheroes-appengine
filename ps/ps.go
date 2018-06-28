@@ -36,6 +36,7 @@ func (hs HeroService) List(c context.Context, name string) ([]service.Hero, erro
 		log.Errorf(c, "%v", err)
 		return nil, err
 	}
+	log.Infof(c, "Get Hero-List: %v", heroes)
 
 	client, err := pubsub.NewClient(c, ProjectID)
 	if err != nil {
@@ -43,13 +44,15 @@ func (hs HeroService) List(c context.Context, name string) ([]service.Hero, erro
 		log.Errorf(c, "%v", e)
 		return nil, e
 	}
+	log.Infof(c, "PubSub client created: %v", client)
 
-	topic, err := client.CreateTopic(c, Topic)
+	topic, err := client.Topic(Topic)
 	if err != nil {
 		e := fmt.Errorf("can not create topic %s: %v", Topic, err)
 		log.Errorf(c, "%v", e)
 		return nil, e
 	}
+	log.Infof(c, "Get PubSub topic: %s -- %v", Topic, client)
 
 	msg := &pubsub.Message{
 		Data: []byte("payload: " + string(len(heroes))),
