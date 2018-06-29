@@ -1,18 +1,21 @@
+# doc: https://cloud.google.com/appengine/docs/standard/go/config/appref 
 language: go
 sudo: false
 git:
   depth: 2
 
 go:
+  # gcloud run with g1.9, thats why test with 1.9
+  - "1.9.x"
   - "1.10.x"
-  - master
+  # - master
 
 
-jobs:
-  exclude:
-    - 
-      if: branch != master
-      go: master
+#jobs:
+#  exclude:
+#    - 
+#      if: branch != master
+#      go: master
 
 
       
@@ -21,11 +24,14 @@ jobs:
 # definition for the build starts her:
 # ------------------------------------
 before_script:
+  #- go get google.golang.org/api/pubsub/v1
+  #- go get -u cloud.google.com/go/...
   - go get -t ./...
-# https://github.com/golangci/golangci-lint
+  # https://github.com/golangci/golangci-lint
+  #- go get -u github.com/golangci/golangci-lint/cmd/golangci-lint
 
 script:
-  - echo "current branch ${TRAVIS_BRANCH}"
+  #- echo "current branch ${TRAVIS_BRANCH}"
   - make test
 
 after_success:

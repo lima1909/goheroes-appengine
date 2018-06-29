@@ -87,7 +87,7 @@ func infoPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = t.Execute(w, app.Info)
+	err = t.Execute(w, app)
 	if err != nil {
 		fmt.Fprintf(w, "Err: %v\n", err)
 		return

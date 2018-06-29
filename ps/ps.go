@@ -2,17 +2,19 @@ package ps
 
 import (
 	"context"
+	"encoding/base64"
+	"fmt"
 
-	// "cloud.google.com/go/pubsub"
+	"golang.org/x/oauth2/google"
+
 	"github.com/lima1909/goheroes-appengine/service"
+	pubsub "google.golang.org/api/pubsub/v1"
 	"google.golang.org/appengine/log"
 )
 
 const (
-	// ProjectID from Cloud Project
-	ProjectID = "goheros-207118"
-	// Topic for pub sub
-	Topic = "HERO"
+// ProjectID from Cloud Project
+// ProjectID = "goheros-207118"
 )
 
 // HeroService wrapeer to HeroService
@@ -28,41 +30,51 @@ func NewHeroService(hs service.HeroService) *HeroService {
 }
 
 // List protocoll list call
+// PubSub in the App Engine runs only with OLD impl!!!
+// good example find here: https://github.com/d2g/dg-pubsubtest
+//
+// find current project dynamic: appengine.RequestID(c) (ProjectID = "goheros-207118")
+//
+// to read the message-queue: gcloud.cmd pubsub subscriptions pull HERO_SUB
+// with: --auto-ack you can clear the queue
 func (hs HeroService) List(c context.Context, name string) ([]service.Hero, error) {
 
-	heroes, err := hs.hs.List(c, name)
+	hc, err := google.DefaultClient(c, pubsub.PubsubScope)
 	if err != nil {
-		log.Errorf(c, "%v", err)
-		return nil, err
+		e := fmt.Errorf("can not create new default client: %v", err)
+		log.Errorf(c, "%v", e)
+		return nil, e
 	}
-	log.Infof(c, "Get Hero-List: %v", heroes)
 
-	// client, err := pubsub.NewClient(c, ProjectID)
-	// if err != nil {
-	// 	e := fmt.Errorf("can no create new client for project %s: %v", ProjectID, err)
-	// 	log.Errorf(c, "%v", e)
-	// 	return nil, e
-	// }
-	// log.Infof(c, "PubSub client created: %v", client)
+	svc, err := pubsub.New(hc)
+	if err != nil {
+		e := fmt.Errorf("can not create new service: %v", err)
+		log.Errorf(c, "%v", e)
+		return nil, e
+	}
 
-	// topic, err := client.Topic(Topic)
-	// if err != nil {
-	// 	e := fmt.Errorf("can not create topic %s: %v", Topic, err)
-	// 	log.Errorf(c, "%v", e)
-	// 	return nil, e
-	// }
-	// log.Infof(c, "Get PubSub topic: %s -- %v", Topic, client)
+	result, err := svc.Projects.Topics.Publish(
+		"projects/goheros-207118/topics/HERO",
+		&pubsub.PublishRequest{
+			Messages: []*pubsub.PubsubMessage{
+				{
+					Attributes: map[string]string{
+						"ATTR1": "Yes",
+						"ATTR2": "true",
+					},
+					Data: base64.StdEncoding.EncodeToString([]byte("hello")),
+				},
+			},
+		},
+	).Do()
+	if err != nil {
+		e := fmt.Errorf("Publish error: %v", err)
+		log.Errorf(c, "%v", e)
+		return nil, e
+	}
 
-	// msg := &pubsub.Message{
-	// 	Data: []byte("payload: " + string(len(heroes))),
-	// }
-	// serverID, err := topic.Publish(c, msg).Get(c)
-	// if err != nil {
-	// 	e := fmt.Errorf("can not publish the message: %v", err)
-	// 	log.Errorf(c, "%v", e)
-	// 	return nil, e
-	// }
+	log.Infof(c, "Publish result: %v ", result)
 
-	// log.Infof(c, "Publish on Topic: %s the message: %v with ServerID: %s", Topic, msg, serverID)
-	return heroes, nil
+	hs.hs.Add(c, "Foo")
+	return hs.hs.List(c, name)
 }

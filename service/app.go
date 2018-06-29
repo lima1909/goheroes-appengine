@@ -3,12 +3,14 @@ package service
 import (
 	"os"
 	"reflect"
+	"time"
 )
 
 // App is the Entrypoint
 type App struct {
 	HeroService
-	Info Info
+	Info    Info
+	Version string
 }
 
 // Info to the current system
@@ -25,5 +27,6 @@ func NewApp(svc HeroService) *App {
 			EnvHeroServiceImpl: os.Getenv("HERO_SERVICE_IMPL"),
 			HeroesService:      reflect.TypeOf(svc).String(),
 		},
+		Version: "dev-snapshot_" + time.Now().Local().Format("2006.01.02 15:04:05"),
 	}
 }
