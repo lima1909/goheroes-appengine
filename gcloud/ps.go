@@ -106,6 +106,11 @@ func Subscription(c context.Context) ([]Message, error) {
 		return nil, e
 	}
 
+	// resultA, err := svc.Projects.Subscriptions.Acknowledge(
+	// 	"projects/goheros-207118/subscriptions/HERO_SUB",
+	// 	&pubsub.AcknowledgeRequest{},
+	// ).Do()
+
 	result, err := svc.Projects.Subscriptions.Pull(
 		"projects/goheros-207118/subscriptions/HERO_SUB",
 		&pubsub.PullRequest{
