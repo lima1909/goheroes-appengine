@@ -10,9 +10,10 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/lima1909/goheroes-appengine/gcloud"
+
 	"github.com/gorilla/mux"
 	"github.com/lima1909/goheroes-appengine/db"
-	"github.com/lima1909/goheroes-appengine/ps"
 	"github.com/lima1909/goheroes-appengine/service"
 
 	"google.golang.org/appengine"
@@ -61,6 +62,10 @@ func handler() http.Handler {
 	// TODO: not necessary anymore (only for the slash on the end)
 	router.HandleFunc("/api/heroes/", heroList)
 
+	// gcloud tries
+	router.HandleFunc("/api/logging", logging)
+	router.HandleFunc("/api/subscribe", subscribe)
+
 	return corsAndOptionHandler(router)
 }
 
@@ -68,7 +73,7 @@ func init() {
 	http.Handle("/", handler())
 
 	if os.Getenv("HERO_SERVICE_IMPL") == "pubsub" {
-		app = service.NewApp(ps.NewHeroService(db.NewMemService()))
+		app = service.NewApp(gcloud.NewHeroService(db.NewMemService()))
 	} else {
 		app = service.NewApp(db.NewMemService())
 	}
@@ -78,6 +83,37 @@ func init() {
 
 func main() {
 	appengine.Main()
+}
+
+func logging(w http.ResponseWriter, r *http.Request) {
+	c := appengine.NewContext(r)
+	logs := gcloud.ShowLogs(c)
+	b, err := json.Marshal(logs)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Fprintf(w, "%s", string(b))
+}
+
+func subscribe(w http.ResponseWriter, r *http.Request) {
+	c := appengine.NewContext(r)
+
+	msgs, err := gcloud.Subscription(c)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	b, err := json.Marshal(msgs)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Fprintf(w, "%s", string(b))
+
 }
 
 func infoPage(w http.ResponseWriter, r *http.Request) {
@@ -107,7 +143,7 @@ func heroList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Fprintf(w, "%s", string(b))
+	fmt.Fprintf(w, "%s ", string(b))
 }
 
 func addHero(w http.ResponseWriter, r *http.Request) {
