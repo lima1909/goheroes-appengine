@@ -7,7 +7,9 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/lima1909/goheroes-appengine/db"
@@ -67,6 +69,44 @@ func init() {
 	app = service.NewApp(db.NewMemService())
 
 	log.Println("Init is ready and start the server on: http://localhost:8080")
+
+	playground()
+}
+
+func playground() {
+	log.Printf("Try to read 8a.nu")
+
+	// Make HTTP GET request
+	response, err := http.Get("https://www.8a.nu/de/scorecard/ranking/")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer response.Body.Close()
+
+	// Get the response body as a string
+	dataInBytes, err := ioutil.ReadAll(response.Body)
+	pageContent := string(dataInBytes)
+
+	// Find a substr
+	startIndex := strings.Index(pageContent, "moritz-welt")
+	if startIndex == -1 {
+		fmt.Println("No element found")
+		os.Exit(0)
+	}
+
+	subString := pageContent[startIndex:(startIndex + 200)]
+
+	// Find score
+	indexStart := strings.Index(subString, "\">")
+	indexEnd := strings.Index(subString, "</a>")
+
+	if indexStart == -1 || indexEnd == -1 {
+		fmt.Println("can not find score")
+	}
+
+	score := subString[(indexStart + 2):indexEnd]
+
+	log.Printf("Score from Moritz Welt: %v", score)
 }
 
 func main() {
