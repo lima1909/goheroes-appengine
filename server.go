@@ -70,14 +70,19 @@ func init() {
 
 	log.Println("Init is ready and start the server on: http://localhost:8080")
 
-	playground()
+	score := playground("https://www.8a.nu/de/scorecard/ranking/?City=Nuremberg", "jasmin-roeper")
+
+	log.Printf("My score is %v ", score)
+
+	score = playground("https://www.8a.nu/de/scorecard/ranking/?City=Nürnberg", "mario-linke")
+
+	log.Printf("And the score of my Schnucki is %v ", score)
+
 }
 
-func playground() {
-	log.Printf("Try to read 8a.nu")
-
+func playground(urlString string, name string) string {
 	// Make HTTP GET request
-	response, err := http.Get("https://www.8a.nu/de/scorecard/ranking/")
+	response, err := http.Get(urlString)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -87,14 +92,18 @@ func playground() {
 	dataInBytes, err := ioutil.ReadAll(response.Body)
 	pageContent := string(dataInBytes)
 
+	// log.Println(pageContent)
+
 	// Find a substr
-	startIndex := strings.Index(pageContent, "moritz-welt")
+	startIndex := strings.Index(pageContent, name)
 	if startIndex == -1 {
 		fmt.Println("No element found")
 		os.Exit(0)
 	}
 
 	subString := pageContent[startIndex:(startIndex + 200)]
+
+	// log.Println(subString)
 
 	// Find score
 	indexStart := strings.Index(subString, "\">")
@@ -104,9 +113,8 @@ func playground() {
 		fmt.Println("can not find score")
 	}
 
-	score := subString[(indexStart + 2):indexEnd]
+	return subString[(indexStart + 2):indexEnd]
 
-	log.Printf("Score from Moritz Welt: %v", score)
 }
 
 func main() {
