@@ -96,11 +96,13 @@ func getScores(w http.ResponseWriter, r *http.Request) {
 
 	b, err := json.Marshal(scoreMap)
 	if err != nil {
+		log.Panicln(err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	fmt.Fprintf(w, "%s", string(b))
+	log.Println(string(b))
+	fmt.Fprintf(w, "%s", b)
 }
 
 func heroList(w http.ResponseWriter, r *http.Request) {
