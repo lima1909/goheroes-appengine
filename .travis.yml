@@ -17,7 +17,9 @@ go:
 #      if: branch != master
 #      go: master
 
-
+matrix:
+  exclude:
+    - go: "1.9.x"
       
 
 # ------------------------------------
