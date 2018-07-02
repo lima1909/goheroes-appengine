@@ -8,18 +8,14 @@ go:
   # gcloud run with g1.9, thats why test with 1.9
   - "1.9.x"
   - "1.10.x"
-  # - master
+#  - master
 
 
-#jobs:
-#  exclude:
-#    - 
-#      if: branch != master
-#      go: master
+jobs:
+  include:
+    - if: branch = master
+      go: master
 
-matrix:
-  exclude:
-    - go: "1.9.x"
       
 
 # ------------------------------------
