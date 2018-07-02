@@ -2,7 +2,13 @@ package db
 
 import (
 	"context"
+	"fmt"
+	"io/ioutil"
 	"log"
+	"net/http"
+	"os"
+	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/lima1909/goheroes-appengine/service"
@@ -10,8 +16,9 @@ import (
 
 // MemService is a Impl from service.HeroService
 type MemService struct {
-	heroes []service.Hero
-	maxID  int64
+	heroes       []service.Hero
+	maxID        int64
+	findScoreMap map[int64]string
 }
 
 // NewMemService create a new instance of MemService
@@ -27,7 +34,13 @@ func NewMemService() *MemService {
 	}
 	maxID := int64(7)
 
-	return &MemService{heroes, maxID}
+	//create Map to find score
+	findScoreMap := map[int64]string{
+		1: "jasmin-roeper#Nuremberg#de",
+		2: "mario-linke#Nürnberg#de",
+	}
+
+	return &MemService{heroes, maxID, findScoreMap}
 }
 
 // List all Heroes, there are saved in the heroes array
@@ -125,4 +138,78 @@ func (m *MemService) Delete(c context.Context, id int64) (*service.Hero, error) 
 	}
 
 	return nil, service.ErrHeroNotFound
+}
+
+// CreateScoreMap to get the scores from 8a.nu
+func (m *MemService) CreateScoreMap(c context.Context) map[int64]int {
+	url1 := "https://www.8a.nu/"
+	url2 := "/scorecard/ranking/?City="
+	searchString := ""
+	var splitString []string
+	scoreMap := map[int64]int{}
+
+	for _, h := range m.heroes {
+		searchString = m.findScoreMap[h.ID]
+
+		if strings.Contains(searchString, "#") {
+			splitString = strings.Split(searchString, "#")
+
+			score := getScore(url1+splitString[2]+url2+splitString[1], splitString[0])
+
+			scoreMap[h.ID] = score
+		} else {
+			scoreMap[h.ID] = 0
+		}
+	}
+
+	return scoreMap
+}
+
+func getScore(urlString string, name string) int {
+	// Make HTTP GET request
+	response, err := http.Get(urlString)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer response.Body.Close()
+
+	// Get the response body as a string
+	dataInBytes, err := ioutil.ReadAll(response.Body)
+	pageContent := string(dataInBytes)
+
+	// Find a substr
+	startIndex := strings.Index(pageContent, name)
+	if startIndex == -1 {
+		fmt.Println("No element found")
+		os.Exit(0)
+	}
+
+	subString := pageContent[startIndex:(startIndex + 200)]
+
+	// Find score
+	indexStart := strings.Index(subString, "\">")
+	indexEnd := strings.Index(subString, "</a>")
+
+	if indexStart == -1 || indexEnd == -1 {
+		fmt.Println("can not find score")
+	}
+
+	return convertToNumber(subString[(indexStart + 2):indexEnd])
+}
+
+func convertToNumber(s string) int {
+	re := regexp.MustCompile("[0-9]+")
+	scoreNumberArray := re.FindAllString(s, -1)
+
+	scoreNumberString := ""
+	for _, c := range scoreNumberArray {
+		scoreNumberString = scoreNumberString + c
+	}
+
+	nb, err := strconv.Atoi(scoreNumberString)
+	if err != nil {
+		return 0
+	}
+
+	return nb
 }

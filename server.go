@@ -7,9 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
 	"strconv"
-	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/lima1909/goheroes-appengine/db"
@@ -58,6 +56,9 @@ func handler() http.Handler {
 		http.Error(w, "invalid method: "+r.Method, http.StatusBadRequest)
 	}).Methods("PUT", "POST", "PATH", "COPY", "HEAD", "LINK", "UNLINK", "PURGE", "LOCK", "UNLOCK", "VIEW", "PROPFIND")
 
+	urlWithScores := "/api/heroes/scores"
+	router.HandleFunc(urlWithScores, getScores).Methods("GET")
+
 	// TODO: not necessary anymore (only for the slash on the end)
 	router.HandleFunc("/api/heroes/", heroList)
 
@@ -69,52 +70,6 @@ func init() {
 	app = service.NewApp(db.NewMemService())
 
 	log.Println("Init is ready and start the server on: http://localhost:8080")
-
-	score := playground("https://www.8a.nu/de/scorecard/ranking/?City=Nuremberg", "jasmin-roeper")
-
-	log.Printf("My score is %v ", score)
-
-	score = playground("https://www.8a.nu/de/scorecard/ranking/?City=Nürnberg", "mario-linke")
-
-	log.Printf("And the score of my Schnucki is %v ", score)
-
-}
-
-func playground(urlString string, name string) string {
-	// Make HTTP GET request
-	response, err := http.Get(urlString)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer response.Body.Close()
-
-	// Get the response body as a string
-	dataInBytes, err := ioutil.ReadAll(response.Body)
-	pageContent := string(dataInBytes)
-
-	// log.Println(pageContent)
-
-	// Find a substr
-	startIndex := strings.Index(pageContent, name)
-	if startIndex == -1 {
-		fmt.Println("No element found")
-		os.Exit(0)
-	}
-
-	subString := pageContent[startIndex:(startIndex + 200)]
-
-	// log.Println(subString)
-
-	// Find score
-	indexStart := strings.Index(subString, "\">")
-	indexEnd := strings.Index(subString, "</a>")
-
-	if indexStart == -1 || indexEnd == -1 {
-		fmt.Println("can not find score")
-	}
-
-	return subString[(indexStart + 2):indexEnd]
-
 }
 
 func main() {
@@ -133,6 +88,19 @@ func infoPage(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "Err: %v\n", err)
 		return
 	}
+}
+
+func getScores(w http.ResponseWriter, r *http.Request) {
+	log.Println("getScores!!!")
+	scoreMap := app.CreateScoreMap(appengine.NewContext(r))
+
+	b, err := json.Marshal(scoreMap)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Fprintf(w, "%s", string(b))
 }
 
 func heroList(w http.ResponseWriter, r *http.Request) {

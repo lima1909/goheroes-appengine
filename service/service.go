@@ -27,4 +27,5 @@ type HeroService interface {
 	Update(c context.Context, h Hero) (*Hero, error)
 	UpdatePosition(c context.Context, h Hero, pos int64) (*Hero, error)
 	Delete(c context.Context, id int64) (*Hero, error)
+	CreateScoreMap(c context.Context) map[int64]int
 }
