@@ -100,7 +100,7 @@ func logging(w http.ResponseWriter, r *http.Request) {
 func subscribe(w http.ResponseWriter, r *http.Request) {
 	c := appengine.NewContext(r)
 
-	msgs, err := gcloud.Subscription(c)
+	msgs, err := gcloud.Sub(c)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -112,7 +112,7 @@ func subscribe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Fprintf(w, "%s", string(b))
+	fmt.Fprintf(w, "%s ", string(b))
 
 }
 
@@ -143,7 +143,7 @@ func heroList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Fprintf(w, "%s ", string(b))
+	fmt.Fprintf(w, "%s", string(b))
 }
 
 func addHero(w http.ResponseWriter, r *http.Request) {

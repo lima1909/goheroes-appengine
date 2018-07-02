@@ -1,3 +1,16 @@
+// Package gcloud package contains specific gcloud API calls, like Pub/Sub
+//
+// https://developers.google.com/apis-explorer/#p/pubsub/v1/pubsub.projects.subscriptions.pull
+//
+// to read the message-queue:
+// gcloud.cmd pubsub subscriptions pull HERO_SUB
+// with: --auto-ack you can clear the queue
+//
+// PubSub in the App Engine runs only with OLD impl!!!
+// good example find here: https://github.com/d2g/dg-pubsubtest
+//
+// find current project dynamic: appengine.RequestID(c) (ProjectID = "goheros-207118")
+//
 package gcloud
 
 import (
@@ -22,149 +35,96 @@ const (
 // HeroService wrapeer to HeroService
 // protocoll HeroService calls
 type HeroService struct {
-	service.HeroService
-	hs        service.HeroService
-	psService pubsub.Service
+	hs service.HeroService
+}
+
+// NewHeroService create a new instance
+func NewHeroService(hs service.HeroService) *HeroService {
+	return &HeroService{hs: hs}
+}
+
+// List protocoll list call
+func (hs HeroService) List(c context.Context, name string) ([]service.Hero, error) {
+	l, err := hs.hs.List(c, name)
+	pub(c, Protocol{
+		Action: "LIST",
+		Time:   time.Now(),
+		Note:   fmt.Sprintf("get list with name: %s and size: %v", name, len(l)),
+	})
+	return l, err
+}
+
+// GetByID delegate to HeroService
+func (hs HeroService) GetByID(c context.Context, id int64) (*service.Hero, error) {
+	hero, err := hs.hs.GetByID(c, id)
+	pub(c, Protocol{
+		Action: "GetByID",
+		HeroID: id,
+		Time:   time.Now(),
+		Note:   fmt.Sprintf("GetByID find Hero: %v", hero),
+	})
+	return hero, err
+}
+
+// Add delegate to HeroService
+func (hs HeroService) Add(c context.Context, n string) (*service.Hero, error) {
+	h, err := hs.hs.Add(c, n)
+	pub(c, Protocol{
+		Action: "Add",
+		HeroID: h.ID,
+		Time:   time.Now(),
+		Note:   fmt.Sprintf("Add Hero: %v with Name: %s", h, n),
+	})
+	return h, err
+}
+
+// Update delegate to HeroService
+func (hs HeroService) Update(c context.Context, h service.Hero) (*service.Hero, error) {
+	pub(c, Protocol{
+		Action: "Update",
+		HeroID: h.ID,
+		Time:   time.Now(),
+		Note:   fmt.Sprintf("Update Hero: %v", h),
+	})
+	return hs.hs.Update(c, h)
+}
+
+// UpdatePosition delegate to HeroService
+func (hs HeroService) UpdatePosition(c context.Context, h service.Hero, pos int64) (*service.Hero, error) {
+	hero, err := hs.hs.UpdatePosition(c, h, pos)
+	pub(c, Protocol{
+		Action: "UpdatePosition",
+		HeroID: h.ID,
+		Time:   time.Now(),
+		Note:   fmt.Sprintf("UpdatePosition Hero: %v with new Pos: %v", hero, pos),
+	})
+	return hero, err
+}
+
+// Delete delegate to HeroService
+func (hs HeroService) Delete(c context.Context, id int64) (*service.Hero, error) {
+	h, err := hs.hs.Delete(c, id)
+	pub(c, Protocol{
+		Action: "Delete",
+		HeroID: id,
+		Time:   time.Now(),
+		Note:   fmt.Sprintf("Delete Hero: %v with ID: %v", h, id),
+	})
+	return h, err
 }
 
 // Protocol are the logging information by each HeroService call
 type Protocol struct {
-	Action string
-	HeroID int64
-	Note   string
-	Time   time.Time
-}
-
-// NewHeroService create a new instance
-func NewHeroService(hs service.HeroService) (*HeroService, error) {
-	hc, err := google.DefaultClient(c, pubsub.PubsubScope)
-	if err != nil {
-		return nil, fmt.Errorf("can not create new default client: %v", err)
-	}
-
-	svc, err := pubsub.New(hc)
-	if err != nil {
-		return nil, fmt.Errorf("can not create new service: %v", err)
-	}
-
-	return &HeroService{
-		hs:        hs,
-		psService: svc,
-	}, nil
-}
-
-// List protocoll list call
-// PubSub in the App Engine runs only with OLD impl!!!
-// good example find here: https://github.com/d2g/dg-pubsubtest
-//
-// find current project dynamic: appengine.RequestID(c) (ProjectID = "goheros-207118")
-//
-func (hs HeroService) List(c context.Context, name string) ([]service.Hero, error) {
-
-	hc, err := google.DefaultClient(c, pubsub.PubsubScope)
-	if err != nil {
-		e := fmt.Errorf("can not create new default client: %v", err)
-		log.Errorf(c, "%v", e)
-		return nil, e
-	}
-
-	svc, err := pubsub.New(hc)
-	if err != nil {
-		e := fmt.Errorf("can not create new service: %v", err)
-		log.Errorf(c, "%v", e)
-		return nil, e
-	}
-
-	result, err := svc.Projects.Topics.Publish(
-		"projects/goheros-207118/topics/HERO",
-		&pubsub.PublishRequest{
-			Messages: []*pubsub.PubsubMessage{
-				{
-					Attributes: map[string]string{
-						"ATTR1": "Yes",
-						"ATTR2": "true",
-						"Name":  "Foo Bar ÜÜÜ",
-					},
-					Data: base64.StdEncoding.EncodeToString([]byte("My Message ÖÖÖ ßßß")),
-				},
-			},
-		},
-	).Do()
-	if err != nil {
-		e := fmt.Errorf("Publish error: %v", err)
-		log.Errorf(c, "%v", e)
-		return nil, e
-	}
-
-	log.Infof(c, "Publish result: %v ", result)
-
-	return hs.hs.List(c, name)
-}
-
-// Message mapping for PubsubMessage
-type Message struct {
-	Attributes map[string]string `json:"attributes,omitempty"`
-	Data       string            `json:"data,omitempty"`
-	MessageID  string            `json:"messageId,omitempty"`
-}
-
-// Subscription subscripe ang get all published messages
-//
-// https://developers.google.com/apis-explorer/#p/pubsub/v1/pubsub.projects.subscriptions.pull
-//
-// to read the message-queue:
-// gcloud.cmd pubsub subscriptions pull HERO_SUB
-// with: --auto-ack you can clear the queue
-func Subscription(c context.Context) ([]Message, error) {
-	hc, err := google.DefaultClient(c, pubsub.PubsubScope)
-	if err != nil {
-		e := fmt.Errorf("can not create new default client: %v", err)
-		log.Errorf(c, "%v", e)
-		return nil, e
-	}
-
-	svc, err := pubsub.New(hc)
-	if err != nil {
-		e := fmt.Errorf("can not create new service: %v", err)
-		log.Errorf(c, "%v", e)
-		return nil, e
-	}
-
-	// resultA, err := svc.Projects.Subscriptions.Acknowledge(
-	// 	"projects/goheros-207118/subscriptions/HERO_SUB",
-	// 	&pubsub.AcknowledgeRequest{},
-	// ).Do()
-
-	result, err := svc.Projects.Subscriptions.Pull(
-		"projects/goheros-207118/subscriptions/HERO_SUB",
-		&pubsub.PullRequest{
-			MaxMessages:       5,
-			ReturnImmediately: true,
-		},
-	).Do()
-	if err != nil {
-		e := fmt.Errorf("Publish error: %v", err)
-		log.Errorf(c, "%v", e)
-		return nil, e
-	}
-
-	msgs := make([]Message, len(result.ReceivedMessages))
-	for i, m := range result.ReceivedMessages {
-		b, _ := base64.StdEncoding.DecodeString(m.Message.Data)
-		msgs[i] = Message{
-			Attributes: m.Message.Attributes,
-			Data:       string(b),
-			MessageID:  m.Message.MessageId,
-		}
-	}
-
-	return msgs, nil
+	Action string    `json:"action"`
+	HeroID int64     `json:"heroid"`
+	Note   string    `json:"note"`
+	Time   time.Time `json:"time"`
 }
 
 func protocol2Map(p Protocol) map[string]string {
 	return map[string]string{
 		"Action": p.Action,
-		"HeroID": strconv.Itoa(p.HeroID),
+		"HeroID": strconv.Itoa(int(p.HeroID)),
 		"Note":   p.Note,
 		"Time":   p.Time.String(),
 	}
@@ -175,31 +135,97 @@ func map2Protocol(m map[string]string) Protocol {
 	id, _ := strconv.Atoi(m["HeroID"])
 	return Protocol{
 		Action: m["Action"],
-		HeroID: id,
+		HeroID: int64(id),
 		Note:   m["Note"],
 		Time:   t,
 	}
 }
 
-func (hs HeroService) Pub(c context.Context, p Protocol) error {
-	result, err := hs.psService.Projects.Topics.Publish(
+func createSevice(c context.Context) (*pubsub.Service, error) {
+	hc, err := google.DefaultClient(c, pubsub.PubsubScope)
+	if err != nil {
+		return nil, fmt.Errorf("can not create new default client: %v", err)
+	}
+
+	svc, err := pubsub.New(hc)
+	if err != nil {
+		return nil, fmt.Errorf("can not create new service: %v", err)
+	}
+
+	return svc, nil
+}
+
+func pub(c context.Context, p Protocol) {
+	svc, err := createSevice(c)
+	if err != nil {
+		log.Errorf(c, "Publish create service error: %v", err)
+		return
+	}
+
+	_, err = svc.Projects.Topics.Publish(
 		"projects/goheros-207118/topics/HERO",
 		&pubsub.PublishRequest{
 			Messages: []*pubsub.PubsubMessage{
 				{
 					Attributes: protocol2Map(p),
-					Data:       base64.StdEncoding.EncodeToString([]byte("My Message ÖÖÖ ßßß")),
+					Data:       base64.StdEncoding.EncodeToString([]byte("pub protcol message")),
 				},
 			},
 		},
 	).Do()
 	if err != nil {
-		e := fmt.Errorf("Publish error: %v", err)
+		log.Errorf(c, "Publish error: %v", err)
+	}
+}
+
+// Sub ...
+func Sub(c context.Context) ([]Protocol, error) {
+	svc, err := createSevice(c)
+	if err != nil {
+		return nil, err
+	}
+
+	result, err := svc.Projects.Subscriptions.Pull(
+		"projects/goheros-207118/subscriptions/HERO_SUB",
+		&pubsub.PullRequest{
+			MaxMessages:       5,
+			ReturnImmediately: true,
+		},
+	).Do()
+	if err != nil {
+		e := fmt.Errorf("Publish error:  %v", err)
 		log.Errorf(c, "%v", e)
 		return nil, e
 	}
 
-	log.Infof(c, "Publish result: %v ", result)
+	ps := make([]Protocol, len(result.ReceivedMessages))
+	for i, m := range result.ReceivedMessages {
+		// b, _ := base64.StdEncoding.DecodeString(m.Message.Data)
+		ps[i] = map2Protocol(m.Message.Attributes)
+		ack(c, m.AckId)
+		err = Add(c, ps[i])
+		if err != nil {
+			log.Errorf(c, "err by add protocol to datastore: %v", err)
+		}
+	}
 
-	return nil
+	return ps, nil
+}
+
+// acknowledge all messages with the ack ID
+func ack(c context.Context, ackIDs ...string) {
+	svc, err := createSevice(c)
+	if err != nil {
+		log.Errorf(c, "Acknowledge create Service error: %v", err)
+		return
+	}
+
+	_, err = svc.Projects.Subscriptions.Acknowledge(
+		"projects/goheros-207118/subscriptions/HERO_SUB",
+		&pubsub.AcknowledgeRequest{AckIds: ackIDs},
+	).Do()
+
+	if err != nil {
+		log.Errorf(c, "Acknowledge error by execute acknowledge-request: %v", err)
+	}
 }
