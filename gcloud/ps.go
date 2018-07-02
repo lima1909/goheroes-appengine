@@ -49,7 +49,7 @@ func NewHeroService(hs service.HeroService) *HeroService,error {
 	return &HeroService{
 		hs: hs,
 		psService:svc,
-	}
+	},nil
 }
 
 // List protocoll list call
@@ -187,7 +187,6 @@ func (hs HeroService) Pub(c context.Context, p Protocol)  error {
 			Messages: []*pubsub.PubsubMessage{
 				{
 					Attributes: protocol2Map(p),
-					},
 					Data: base64.StdEncoding.EncodeToString([]byte("My Message ÖÖÖ ßßß")),
 				},
 			},
