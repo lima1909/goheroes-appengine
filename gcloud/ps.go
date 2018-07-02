@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"strconv"
 	"time"
 
 	"golang.org/x/oauth2/google"
@@ -35,21 +36,21 @@ type Protocol struct {
 }
 
 // NewHeroService create a new instance
-func NewHeroService(hs service.HeroService) *HeroService,error {
+func NewHeroService(hs service.HeroService) (*HeroService, error) {
 	hc, err := google.DefaultClient(c, pubsub.PubsubScope)
 	if err != nil {
 		return nil, fmt.Errorf("can not create new default client: %v", err)
 	}
-	
+
 	svc, err := pubsub.New(hc)
 	if err != nil {
 		return nil, fmt.Errorf("can not create new service: %v", err)
 	}
 
 	return &HeroService{
-		hs: hs,
-		psService:svc,
-	},nil
+		hs:        hs,
+		psService: svc,
+	}, nil
 }
 
 // List protocoll list call
@@ -160,34 +161,34 @@ func Subscription(c context.Context) ([]Message, error) {
 	return msgs, nil
 }
 
-func protocol2Map(p Protocol)map[string]string {
+func protocol2Map(p Protocol) map[string]string {
 	return map[string]string{
 		"Action": p.Action,
-		"HeroID": strconv.Itoa( p.HeroID),
-		"Note":  p.Note,
-		"Time":  p.Time.String(),
+		"HeroID": strconv.Itoa(p.HeroID),
+		"Note":   p.Note,
+		"Time":   p.Time.String(),
 	}
 }
 
 func map2Protocol(m map[string]string) Protocol {
-	t,_:=time.Parse("2006.01.02 15:04:05",m["Time"])
-	id,_:=strconv.Atoi(m["HeroID"])
+	t, _ := time.Parse("2006.01.02 15:04:05", m["Time"])
+	id, _ := strconv.Atoi(m["HeroID"])
 	return Protocol{
 		Action: m["Action"],
 		HeroID: id,
-		Note: m["Note"],
-		Time: t,
+		Note:   m["Note"],
+		Time:   t,
 	}
 }
 
-func (hs HeroService) Pub(c context.Context, p Protocol)  error {
+func (hs HeroService) Pub(c context.Context, p Protocol) error {
 	result, err := hs.psService.Projects.Topics.Publish(
 		"projects/goheros-207118/topics/HERO",
 		&pubsub.PublishRequest{
 			Messages: []*pubsub.PubsubMessage{
 				{
 					Attributes: protocol2Map(p),
-					Data: base64.StdEncoding.EncodeToString([]byte("My Message ÖÖÖ ßßß")),
+					Data:       base64.StdEncoding.EncodeToString([]byte("My Message ÖÖÖ ßßß")),
 				},
 			},
 		},
