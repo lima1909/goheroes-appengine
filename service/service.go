@@ -15,8 +15,15 @@ var (
 
 // Hero the struct
 type Hero struct {
-	ID   int64  `json:"id"`
-	Name string `json:"name"`
+	ID        int64     `json:"id"`
+	Name      string    `json:"name"`
+	ScoreData ScoreData `json:"-"`
+}
+
+type ScoreData struct {
+	Name    string
+	City    string
+	Country string
 }
 
 // HeroService access to Heroes methods

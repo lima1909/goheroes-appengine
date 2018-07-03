@@ -16,16 +16,15 @@ import (
 
 // MemService is a Impl from service.HeroService
 type MemService struct {
-	heroes       []service.Hero
-	maxID        int64
-	findScoreMap map[int64]string
+	heroes []service.Hero
+	maxID  int64
 }
 
 // NewMemService create a new instance of MemService
 func NewMemService() *MemService {
 	heroes := []service.Hero{
-		service.Hero{ID: 1, Name: "Jasmin"},
-		service.Hero{ID: 2, Name: "Mario"},
+		service.Hero{ID: 1, Name: "Jasmin", ScoreData: service.ScoreData{Name: "jasmin-roeper", City: "Nuremberg", Country: "de"}},
+		service.Hero{ID: 2, Name: "Mario", ScoreData: service.ScoreData{Name: "mario-linke", City: "Nuremberg", Country: "de"}},
 		service.Hero{ID: 3, Name: "Alex M"},
 		service.Hero{ID: 4, Name: "Adam O"},
 		service.Hero{ID: 5, Name: "Shauna C"},
@@ -34,13 +33,7 @@ func NewMemService() *MemService {
 	}
 	maxID := int64(7)
 
-	//create Map to find score
-	findScoreMap := map[int64]string{
-		1: "jasmin-roeper#Nuremberg#de",
-		2: "mario-linke#Nürnberg#de",
-	}
-
-	return &MemService{heroes, maxID, findScoreMap}
+	return &MemService{heroes, maxID}
 }
 
 // List all Heroes, there are saved in the heroes array
@@ -142,20 +135,12 @@ func (m *MemService) Delete(c context.Context, id int64) (*service.Hero, error) 
 
 // CreateScoreMap to get the scores from 8a.nu
 func (m *MemService) CreateScoreMap(c context.Context) map[int64]int {
-	url1 := "https://www.8a.nu/"
-	url2 := "/scorecard/ranking/?City="
-	searchString := ""
-	var splitString []string
 	scoreMap := map[int64]int{}
 
 	for _, h := range m.heroes {
-		searchString = m.findScoreMap[h.ID]
-
-		if strings.Contains(searchString, "#") {
-			splitString = strings.Split(searchString, "#")
-
-			score := getScore(url1+splitString[2]+url2+splitString[1], splitString[0])
-
+		if h.ScoreData.Name != "" {
+			url := fmt.Sprintf("https://www.8a.nu/%s/scorecard/ranking/?City=%s", h.ScoreData.Country, h.ScoreData.City)
+			score := getScore(url, h.ScoreData.Name)
 			scoreMap[h.ID] = score
 		} else {
 			scoreMap[h.ID] = 0
