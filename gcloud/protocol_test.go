@@ -5,7 +5,7 @@ import (
 )
 
 var (
-	protocol Protocol = NewProtocol("Add", 2, "A note ...")
+	protocol = NewProtocol("Add", 2, "A note ...")
 )
 
 func TestProtocol2Map(t *testing.T) {

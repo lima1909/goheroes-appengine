@@ -1,0 +1,4 @@
+cron:
+- description: "subscribe and save protocol to datastore"
+  url: /worker/protocol
+  schedule: every 1 mins

@@ -11,7 +11,7 @@ endif
 
 
 deploy: 
-	$(GCLOUD_CMD) app deploy -q
+	$(GCLOUD_CMD) app deploy app.yaml cron.yaml -q
 
 logs:
 	$(GCLOUD_CMD) app logs tail

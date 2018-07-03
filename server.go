@@ -17,6 +17,7 @@ import (
 	"github.com/lima1909/goheroes-appengine/service"
 
 	"google.golang.org/appengine"
+	loga "google.golang.org/appengine/log"
 )
 
 var app *service.App
@@ -63,8 +64,8 @@ func handler() http.Handler {
 	router.HandleFunc("/api/heroes/", heroList)
 
 	// gcloud tries
-	router.HandleFunc("/api/logging", logging)
-	router.HandleFunc("/api/subscribe", subscribe)
+	router.HandleFunc("/api/protocol", protocol)
+	router.HandleFunc("/worker/protocol", subscribeAndStore)
 
 	return corsAndOptionHandler(router)
 }
@@ -85,10 +86,14 @@ func main() {
 	appengine.Main()
 }
 
-func logging(w http.ResponseWriter, r *http.Request) {
-	c := appengine.NewContext(r)
-	logs := gcloud.ShowLogs(c)
-	b, err := json.Marshal(logs)
+func protocol(w http.ResponseWriter, r *http.Request) {
+	protocols, err := gcloud.List(appengine.NewContext(r))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	b, err := json.Marshal(protocols)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -97,16 +102,24 @@ func logging(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "%s", string(b))
 }
 
-func subscribe(w http.ResponseWriter, r *http.Request) {
+func subscribeAndStore(w http.ResponseWriter, r *http.Request) {
 	c := appengine.NewContext(r)
 
-	msgs, err := gcloud.Sub(c)
+	protocols, err := gcloud.Sub(c)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	b, err := json.Marshal(msgs)
+	for _, p := range protocols {
+		err = gcloud.Add(c, p)
+		if err != nil {
+			loga.Errorf(c, "err by add protocol to datastore: %v", err)
+		}
+
+	}
+
+	b, err := json.Marshal(protocols)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
