@@ -20,7 +20,7 @@ const (
 func List(c context.Context) ([]Protocol, error) {
 	c = setNamespace(c)
 
-	q := datastore.NewQuery(KIND).Order("Time")
+	q := datastore.NewQuery(KIND).Order("-Time")
 
 	p := []Protocol{}
 	_, err := q.GetAll(c, &p)
