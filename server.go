@@ -67,6 +67,9 @@ func handler() http.Handler {
 	router.HandleFunc("/api/protocol", protocol)
 	router.HandleFunc("/worker/protocol", subscribeAndStore)
 
+	// to be able to work on the client side until a mem service for the protocol is available
+	router.HandleFunc("/api/protocolMem", protocolMem)
+
 	return corsAndOptionHandler(router)
 }
 
@@ -98,6 +101,23 @@ func protocol(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	fmt.Fprintf(w, "%s", string(b))
+}
+
+func protocolMem(w http.ResponseWriter, r *http.Request) {
+	// protocols := []gcloud.Protocol{
+	p := gcloud.NewProtocol("Add", 2, "A note about add ...")
+	// gcloud.NewProtocol("Add", 2, "A note about add ..."),
+	// }
+
+	b, err := json.Marshal(p)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	log.Println(string(b))
 
 	fmt.Fprintf(w, "%s", string(b))
 }
