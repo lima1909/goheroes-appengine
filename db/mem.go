@@ -93,15 +93,18 @@ func (m *MemService) UpdatePosition(c context.Context, h service.Hero, pos int64
 	}
 
 	oldPos := 0
+	//need to get the hero on the server because of additional datas like scoreData
+	heroOnServer := service.Hero{}
 	for i, hero := range m.heroes {
 		if hero.ID == h.ID {
 			oldPos = i
+			heroOnServer = hero
 			break
 		}
 	}
 
 	newHeroesSlice := append(m.heroes[:oldPos], m.heroes[oldPos+1:]...)
-	m.heroes = append(newHeroesSlice[:pos], append([]service.Hero{h}, newHeroesSlice[pos:]...)...)
+	m.heroes = append(newHeroesSlice[:pos], append([]service.Hero{heroOnServer}, newHeroesSlice[pos:]...)...)
 
 	//just for debugging and logging
 	for i, hero := range m.heroes {
