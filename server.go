@@ -64,11 +64,11 @@ func handler() http.Handler {
 	router.HandleFunc("/api/heroes/", heroList)
 
 	// gcloud tries
-	router.HandleFunc("/api/protocol", protocol)
+	router.HandleFunc("/api/heroes/protocol", protocol)
 	router.HandleFunc("/worker/protocol", subscribeAndStore)
 
 	// to be able to work on the client side until a mem service for the protocol is available
-	router.HandleFunc("/api/protocolMem", protocolMem)
+	router.HandleFunc("/api/heroes/protocolMem", protocolMem)
 
 	return corsAndOptionHandler(router)
 }
