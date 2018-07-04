@@ -11,6 +11,10 @@ var (
 	ErrHeroNotFound = errors.New("Hero not Found")
 	// ErrPosNotFound if new Position is out of range
 	ErrPosNotFound = errors.New("Out of Range")
+	// ErrNoContent if reading 8a.nu returns empty string
+	ErrNoContent = errors.New("No content found on 8a.nu")
+	// ErrCanNotFindName if search string can not be found on 8a.nu
+	ErrCanNotFindName = errors.New("Can not find %v on %v")
 )
 
 // Hero the struct
@@ -20,6 +24,7 @@ type Hero struct {
 	ScoreData ScoreData `json:"-"`
 }
 
+// ScoreData - to create the correct search url
 type ScoreData struct {
 	Name    string
 	City    string

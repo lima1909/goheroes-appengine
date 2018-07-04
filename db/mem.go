@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -138,38 +137,42 @@ func (m *MemService) CreateScoreMap(c context.Context) map[int64]int {
 	scoreMap := map[int64]int{}
 
 	for _, h := range m.heroes {
+		scoreMap[h.ID] = 0
 		if h.ScoreData.Name != "" {
 			url := fmt.Sprintf("https://www.8a.nu/%s/scorecard/ranking/?City=%s", h.ScoreData.Country, h.ScoreData.City)
-			score := getScore(url, h.ScoreData.Name)
-			scoreMap[h.ID] = score
-		} else {
-			scoreMap[h.ID] = 0
+			score, err := getScore(url, h.ScoreData.Name)
+			if err == nil {
+				scoreMap[h.ID] = score
+			}
 		}
 	}
 
 	return scoreMap
 }
 
-func getScore(urlString string, name string) int {
-	log.Println(urlString)
-	log.Println(name)
-
+func getScore(urlString string, name string) (int, error) {
 	// Make HTTP GET request
 	response, err := http.Get(urlString)
 	if err != nil {
-		log.Fatal(err)
+		return 0, err
 	}
 	defer response.Body.Close()
 
 	// Get the response body as a string
 	dataInBytes, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return 0, err
+	}
+
 	pageContent := string(dataInBytes)
+	if pageContent == "" {
+		return 0, service.ErrNoContent
+	}
 
 	// Find a substr
 	startIndex := strings.Index(pageContent, name)
 	if startIndex == -1 {
-		fmt.Println("No element found")
-		os.Exit(0)
+		return 0, fmt.Errorf("Can not find %v on %v ", name, urlString)
 	}
 
 	subString := pageContent[startIndex:(startIndex + 200)]
@@ -179,10 +182,10 @@ func getScore(urlString string, name string) int {
 	indexEnd := strings.Index(subString, "</a>")
 
 	if indexStart == -1 || indexEnd == -1 {
-		fmt.Println("can not find score")
+		return 0, fmt.Errorf("Can not find score for %v " + name)
 	}
 
-	return convertToNumber(subString[(indexStart + 2):indexEnd])
+	return convertToNumber(subString[(indexStart + 2):indexEnd]), nil
 }
 
 func convertToNumber(s string) int {

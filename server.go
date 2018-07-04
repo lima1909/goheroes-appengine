@@ -91,17 +91,14 @@ func infoPage(w http.ResponseWriter, r *http.Request) {
 }
 
 func getScores(w http.ResponseWriter, r *http.Request) {
-	log.Println("getScores!!!")
 	scoreMap := app.CreateScoreMap(appengine.NewContext(r))
 
 	b, err := json.Marshal(scoreMap)
 	if err != nil {
-		log.Panicln(err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	log.Println(string(b))
 	fmt.Fprintf(w, "%s", b)
 }
 
