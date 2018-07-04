@@ -405,3 +405,17 @@ func TestWriteHeroToClient(t *testing.T) {
 		t.Errorf("expect: Jasmin in body, got: %v", strBody)
 	}
 }
+
+func TestGetScores(t *testing.T) {
+	//TODO I don't want to get the real scoreMap from 8a.nu, I want to mock the return of app.CreateScoreMap(appengine.NewContext(r)) in some way!!!!
+
+	// resp, err := http.Get(fmt.Sprintf("%s/api/heroes/scores", server.URL))
+	// if err != nil {
+	// 	t.Errorf("No err expected: %v", err)
+	// }
+
+	// // check Header: Access-Control-Allow-Origin
+	// if resp.Header.Get("Access-Control-Allow-Origin") != "*" {
+	// 	t.Errorf(`expect "*" but get: %v`, resp.Header.Get("Access-Control-Allow-Origin"))
+	// }
+}
