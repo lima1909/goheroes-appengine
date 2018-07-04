@@ -340,6 +340,8 @@ func TestGetHeroFromServiceFail(t *testing.T) {
 }
 
 func TestSwitchHero(t *testing.T) {
+	resetMemService()
+
 	req, err := http.NewRequest("PUT",
 		fmt.Sprintf("%s/api/heroes?pos=4", server.URL),
 		strings.NewReader(` { "name" : "Jasmin", "id" : 1} `))

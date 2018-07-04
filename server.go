@@ -72,6 +72,11 @@ func init() {
 	log.Println("Init is ready and start the server on: http://localhost:8080")
 }
 
+/** This is needed for tests */
+func resetMemService() {
+	app = service.NewApp(db.NewMemService())
+}
+
 func main() {
 	appengine.Main()
 }
