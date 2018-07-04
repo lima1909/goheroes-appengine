@@ -24,7 +24,7 @@ type MemService struct {
 func NewMemService() *MemService {
 	heroes := []service.Hero{
 		service.Hero{ID: 1, Name: "Jasmin", ScoreData: service.ScoreData{Name: "jasmin-roeper", City: "Nuremberg", Country: "de"}},
-		service.Hero{ID: 2, Name: "Mario", ScoreData: service.ScoreData{Name: "mario-linke", City: "Nuremberg", Country: "de"}},
+		service.Hero{ID: 2, Name: "Mario", ScoreData: service.ScoreData{Name: "mario-linke", City: "Nürnberg", Country: "de"}},
 		service.Hero{ID: 3, Name: "Alex M"},
 		service.Hero{ID: 4, Name: "Adam O"},
 		service.Hero{ID: 5, Name: "Shauna C"},
@@ -151,6 +151,9 @@ func (m *MemService) CreateScoreMap(c context.Context) map[int64]int {
 }
 
 func getScore(urlString string, name string) int {
+	log.Println(urlString)
+	log.Println(name)
+
 	// Make HTTP GET request
 	response, err := http.Get(urlString)
 	if err != nil {
