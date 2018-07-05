@@ -106,12 +106,15 @@ func protocol(w http.ResponseWriter, r *http.Request) {
 }
 
 func protocolMem(w http.ResponseWriter, r *http.Request) {
-	// protocols := []gcloud.Protocol{
-	p := gcloud.NewProtocol("Add", 2, "A note about add ...")
-	// gcloud.NewProtocol("Add", 2, "A note about add ..."),
-	// }
+	protocols := []gcloud.Protocol{
+		gcloud.NewProtocol("Add", 2, "A note about add ..."),
+		gcloud.NewProtocol("Delete", 7, "A note about delete ..."),
+		gcloud.NewProtocol("List", 17, "A note about list ..."),
+		gcloud.NewProtocol("Switch", 5, "A note about switch ..."),
+		gcloud.NewProtocol("GetByID", 3, "A note about getByID ..."),
+	}
 
-	b, err := json.Marshal(p)
+	b, err := json.Marshal(protocols)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
