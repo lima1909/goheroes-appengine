@@ -21,7 +21,7 @@ var (
 )
 
 func init() {
-	os.Setenv("HERO_SERVICE_IMPL", "NotSet")
+	os.Setenv("RUN_IN_CLOUD", "NotSet")
 }
 
 func TestHeroList(t *testing.T) {

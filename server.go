@@ -73,7 +73,7 @@ func handler() http.Handler {
 func init() {
 	http.Handle("/", handler())
 
-	if os.Getenv("HERO_SERVICE_IMPL") == "pubsub" {
+	if os.Getenv("RUN_IN_CLOUD") == "YES" {
 		app = service.NewApp(gcloud.NewHeroService(db.NewMemService()))
 	} else {
 		app = service.NewApp(db.NewMemService())
@@ -103,30 +103,32 @@ func protocol(w http.ResponseWriter, r *http.Request) {
 }
 
 func subscribeAndStore(w http.ResponseWriter, r *http.Request) {
-	c := appengine.NewContext(r)
+	if app.Info.RunInCloud {
 
-	protocols, err := gcloud.Sub(c)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+		c := appengine.NewContext(r)
 
-	for _, p := range protocols {
-		err = gcloud.Add(c, p)
+		protocols, err := gcloud.Sub(c)
 		if err != nil {
-			loga.Errorf(c, "err by add protocol to datastore: %v", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
 
+		for _, p := range protocols {
+			err = gcloud.Add(c, p)
+			if err != nil {
+				loga.Errorf(c, "err by add protocol to datastore: %v", err)
+			}
+
+		}
+
+		b, err := json.Marshal(protocols)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		fmt.Fprintf(w, "%s ", string(b))
 	}
-
-	b, err := json.Marshal(protocols)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	fmt.Fprintf(w, "%s ", string(b))
-
 }
 
 func infoPage(w http.ResponseWriter, r *http.Request) {

@@ -3,6 +3,7 @@ package service
 import (
 	"os"
 	"reflect"
+	"strconv"
 	"time"
 )
 
@@ -16,17 +17,20 @@ type App struct {
 
 // Info to the current system
 type Info struct {
-	HeroesService      string
-	EnvHeroServiceImpl string
+	HeroesService string
+	RunInCloud    bool
 }
 
 // NewApp create a new App instance
 func NewApp(svc ProtocolHeroService) *App {
+
+	inCloud, _ := strconv.ParseBool(os.Getenv("RUN_IN_CLOUD"))
+
 	return &App{
 		ProtocolHeroService: svc,
 		Info: Info{
-			EnvHeroServiceImpl: os.Getenv("HERO_SERVICE_IMPL"),
-			HeroesService:      reflect.TypeOf(svc).String(),
+			RunInCloud:    inCloud,
+			HeroesService: reflect.TypeOf(svc).String(),
 		},
 		Version: "dev-snapshot_" + time.Now().Local().Format("2006.01.02 15:04:05"),
 	}
