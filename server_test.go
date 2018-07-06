@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	"github.com/gorilla/mux"
+	"github.com/lima1909/goheroes-appengine/db"
 	"github.com/lima1909/goheroes-appengine/service"
 )
 
@@ -340,7 +341,8 @@ func TestGetHeroFromServiceFail(t *testing.T) {
 }
 
 func TestSwitchHero(t *testing.T) {
-	resetMemService()
+	// reset MemService
+	app = service.NewApp(db.NewMemService())
 
 	req, err := http.NewRequest("PUT",
 		fmt.Sprintf("%s/api/heroes?pos=4", server.URL),
