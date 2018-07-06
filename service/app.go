@@ -21,15 +21,18 @@ type Info struct {
 	RunInCloud    bool
 }
 
+// RunInCloud check Env: RUN_IN_CLOUD is set tue true
+func RunInCloud() bool {
+	inCloud, _ := strconv.ParseBool(os.Getenv("RUN_IN_CLOUD"))
+	return inCloud
+}
+
 // NewApp create a new App instance
 func NewApp(svc ProtocolHeroService) *App {
-
-	inCloud, _ := strconv.ParseBool(os.Getenv("RUN_IN_CLOUD"))
-
 	return &App{
 		ProtocolHeroService: svc,
 		Info: Info{
-			RunInCloud:    inCloud,
+			RunInCloud:    RunInCloud(),
 			HeroesService: reflect.TypeOf(svc).String(),
 		},
 		Version: "dev-snapshot_" + time.Now().Local().Format("2006.01.02 15:04:05"),

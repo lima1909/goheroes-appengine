@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
 	"strconv"
 
 	"github.com/lima1909/goheroes-appengine/gcloud"
@@ -73,7 +72,7 @@ func handler() http.Handler {
 func init() {
 	http.Handle("/", handler())
 
-	if os.Getenv("RUN_IN_CLOUD") == "YES" {
+	if service.RunInCloud() {
 		app = service.NewApp(gcloud.NewHeroService(db.NewMemService()))
 	} else {
 		app = service.NewApp(db.NewMemService())
@@ -103,8 +102,7 @@ func protocol(w http.ResponseWriter, r *http.Request) {
 }
 
 func subscribeAndStore(w http.ResponseWriter, r *http.Request) {
-	if app.Info.RunInCloud {
-
+	if service.RunInCloud() {
 		c := appengine.NewContext(r)
 
 		protocols, err := gcloud.Sub(c)
