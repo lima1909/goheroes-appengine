@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/lima1909/goheroes-appengine/service"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
@@ -16,13 +17,13 @@ const (
 	KIND = "Protocol"
 )
 
-// List all Protocol, there are saved in datastore
-func List(c context.Context) ([]Protocol, error) {
+// ProtocolsFromDatastore List all Protocol, there are saved in datastore
+func ProtocolsFromDatastore(c context.Context) ([]service.Protocol, error) {
 	c = setNamespace(c)
 
 	q := datastore.NewQuery(KIND).Order("-Time")
 
-	p := []Protocol{}
+	p := []service.Protocol{}
 	_, err := q.GetAll(c, &p)
 	if err != nil {
 		return p, fmt.Errorf("Err by datastore.GetAll: %v", err)
@@ -32,10 +33,10 @@ func List(c context.Context) ([]Protocol, error) {
 }
 
 // GetByID get Protocol by the ID
-func GetByID(c context.Context, id int64) (*Protocol, error) {
+func GetByID(c context.Context, id int64) (*service.Protocol, error) {
 	c = setNamespace(c)
 
-	p := []Protocol{}
+	p := []service.Protocol{}
 	ks, err := datastore.NewQuery(KIND).Filter("ID =", id).GetAll(c, &p)
 	if err != nil {
 		return nil, fmt.Errorf("No Protocol with ID: %v found in datastore: %v", id, err)
@@ -49,7 +50,7 @@ func GetByID(c context.Context, id int64) (*Protocol, error) {
 }
 
 // Add a Protocol to datastore
-func Add(c context.Context, p Protocol) error {
+func Add(c context.Context, p service.Protocol) error {
 	c = setNamespace(c)
 
 	k := datastore.NewIncompleteKey(c, KIND, nil)
@@ -81,7 +82,7 @@ func Add(c context.Context, p Protocol) error {
 // }
 
 // Delete a Protocol from datastore
-func Delete(c context.Context, id int64) (*Protocol, error) {
+func Delete(c context.Context, id int64) (*service.Protocol, error) {
 	c = setNamespace(c)
 
 	p, err := GetByID(c, id)

@@ -40,13 +40,18 @@ func NewHeroService(hs service.HeroService) *HeroService {
 	return &HeroService{hs: hs}
 }
 
+// Protocols impl from ProtocolService
+func (hs HeroService) Protocols(c context.Context) ([]service.Protocol, error) {
+	return ProtocolsFromDatastore(c)
+}
+
 // List protocoll list call
 func (hs HeroService) List(c context.Context, name string) ([]service.Hero, error) {
 	l, err := hs.hs.List(c, name)
 	if name == "" {
-		pub(c, NewProtocolf("List", 0, "get list with size: %v", len(l)))
+		pub(c, service.NewProtocolf("List", 0, "get list with size: %v", len(l)))
 	} else {
-		pub(c, NewProtocolf("List", 0, "get list (Search) with name: %s and size: %v", name, len(l)))
+		pub(c, service.NewProtocolf("List", 0, "get list (Search) with name: %s and size: %v", name, len(l)))
 	}
 	return l, err
 }
@@ -54,34 +59,34 @@ func (hs HeroService) List(c context.Context, name string) ([]service.Hero, erro
 // GetByID delegate to HeroService
 func (hs HeroService) GetByID(c context.Context, id int64) (*service.Hero, error) {
 	hero, err := hs.hs.GetByID(c, id)
-	pub(c, NewProtocolf("GetByID", id, "GetByID find Hero: %v by ID: %v", hero, id))
+	pub(c, service.NewProtocolf("GetByID", id, "GetByID find Hero: %v by ID: %v", hero, id))
 	return hero, err
 }
 
 // Add delegate to HeroService
 func (hs HeroService) Add(c context.Context, n string) (*service.Hero, error) {
 	h, err := hs.hs.Add(c, n)
-	pub(c, NewProtocolf("Add", h.ID, "Add Hero: %v with Name: %s", h, n))
+	pub(c, service.NewProtocolf("Add", h.ID, "Add Hero: %v with Name: %s", h, n))
 	return h, err
 }
 
 // Update delegate to HeroService
 func (hs HeroService) Update(c context.Context, h service.Hero) (*service.Hero, error) {
-	pub(c, NewProtocolf("Update", h.ID, "Update Hero: %v", h))
+	pub(c, service.NewProtocolf("Update", h.ID, "Update Hero: %v", h))
 	return hs.hs.Update(c, h)
 }
 
 // UpdatePosition delegate to HeroService
 func (hs HeroService) UpdatePosition(c context.Context, h service.Hero, pos int64) (*service.Hero, error) {
 	hero, err := hs.hs.UpdatePosition(c, h, pos)
-	pub(c, NewProtocolf("UpdatePosition", h.ID, "UpdatePosition Hero: %v with new Pos: %v", hero, pos))
+	pub(c, service.NewProtocolf("UpdatePosition", h.ID, "UpdatePosition Hero: %v with new Pos: %v", hero, pos))
 	return hero, err
 }
 
 // Delete delegate to HeroService
 func (hs HeroService) Delete(c context.Context, id int64) (*service.Hero, error) {
 	h, err := hs.hs.Delete(c, id)
-	pub(c, NewProtocolf("Delete", id, "Delete Hero: %v with ID: %v", h, id))
+	pub(c, service.NewProtocolf("Delete", id, "Delete Hero: %v with ID: %v", h, id))
 	return h, err
 }
 
@@ -99,7 +104,7 @@ func createSevice(c context.Context) (*pubsub.Service, error) {
 	return svc, nil
 }
 
-func pub(c context.Context, p Protocol) {
+func pub(c context.Context, p service.Protocol) {
 	svc, err := createSevice(c)
 	if err != nil {
 		log.Errorf(c, "Publish create service error: %v", err)
@@ -110,7 +115,7 @@ func pub(c context.Context, p Protocol) {
 		&pubsub.PublishRequest{
 			Messages: []*pubsub.PubsubMessage{
 				{
-					Attributes: protocol2Map(p),
+					Attributes: service.Protocol2Map(p),
 					Data:       base64.StdEncoding.EncodeToString([]byte("pub protcol message")),
 				},
 			},
@@ -122,7 +127,7 @@ func pub(c context.Context, p Protocol) {
 }
 
 // Sub subscribe of the hero topic (pull and ack)
-func Sub(c context.Context) ([]Protocol, error) {
+func Sub(c context.Context) ([]service.Protocol, error) {
 	svc, err := createSevice(c)
 	if err != nil {
 		return nil, err
@@ -137,9 +142,9 @@ func Sub(c context.Context) ([]Protocol, error) {
 		return nil, e
 	}
 
-	ps := make([]Protocol, len(result.ReceivedMessages))
+	ps := make([]service.Protocol, len(result.ReceivedMessages))
 	for i, m := range result.ReceivedMessages {
-		ps[i] = map2Protocol(m.Message.Attributes)
+		ps[i] = service.Map2Protocol(m.Message.Attributes)
 		ack(c, m.AckId)
 	}
 

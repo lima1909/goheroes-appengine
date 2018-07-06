@@ -8,7 +8,8 @@ import (
 
 // App is the Entrypoint
 type App struct {
-	HeroService
+	ProtocolHeroService
+
 	Info    Info
 	Version string
 }
@@ -20,9 +21,9 @@ type Info struct {
 }
 
 // NewApp create a new App instance
-func NewApp(svc HeroService) *App {
+func NewApp(svc ProtocolHeroService) *App {
 	return &App{
-		HeroService: svc,
+		ProtocolHeroService: svc,
 		Info: Info{
 			EnvHeroServiceImpl: os.Getenv("HERO_SERVICE_IMPL"),
 			HeroesService:      reflect.TypeOf(svc).String(),

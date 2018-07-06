@@ -30,6 +30,14 @@ func NewMemService() *MemService {
 	return &MemService{heroes, maxID}
 }
 
+// Protocols impl from ProtocolService
+func (MemService) Protocols(c context.Context) ([]service.Protocol, error) {
+	return []service.Protocol{
+		service.NewProtocolf("Add", 1, "add new Hero with ID: 1"),
+		service.NewProtocolf("List", 0, "List from Heroes with len: 5"),
+	}, nil
+}
+
 // List all Heroes, there are saved in the heroes array
 func (m MemService) List(c context.Context, name string) ([]service.Hero, error) {
 	if name == "" {

@@ -28,3 +28,14 @@ type HeroService interface {
 	UpdatePosition(c context.Context, h Hero, pos int64) (*Hero, error)
 	Delete(c context.Context, id int64) (*Hero, error)
 }
+
+// ProtocolService acces to the Protocols
+type ProtocolService interface {
+	Protocols(c context.Context) ([]Protocol, error)
+}
+
+// ProtocolHeroService combine Hero and ProtocolService
+type ProtocolHeroService interface {
+	HeroService
+	ProtocolService
+}

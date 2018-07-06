@@ -87,7 +87,7 @@ func main() {
 }
 
 func protocol(w http.ResponseWriter, r *http.Request) {
-	protocols, err := gcloud.List(appengine.NewContext(r))
+	protocols, err := app.Protocols(appengine.NewContext(r))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
