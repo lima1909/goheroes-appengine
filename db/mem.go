@@ -2,7 +2,12 @@ package db
 
 import (
 	"context"
+	"fmt"
+	"io/ioutil"
 	"log"
+	"net/http"
+	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/lima1909/goheroes-appengine/service"
@@ -17,8 +22,8 @@ type MemService struct {
 // NewMemService create a new instance of MemService
 func NewMemService() *MemService {
 	heroes := []service.Hero{
-		service.Hero{ID: 1, Name: "Jasmin"},
-		service.Hero{ID: 2, Name: "Mario"},
+		service.Hero{ID: 1, Name: "Jasmin", ScoreData: service.ScoreData{Name: "jasmin-roeper", City: "Nuremberg", Country: "de"}},
+		service.Hero{ID: 2, Name: "Mario", ScoreData: service.ScoreData{Name: "mario-linke", City: "Nürnberg", Country: "de"}},
 		service.Hero{ID: 3, Name: "Alex M"},
 		service.Hero{ID: 4, Name: "Adam O"},
 		service.Hero{ID: 5, Name: "Shauna C"},
@@ -96,15 +101,18 @@ func (m *MemService) UpdatePosition(c context.Context, h service.Hero, pos int64
 	}
 
 	oldPos := 0
+	//need to get the hero on the server because of additional datas like scoreData
+	heroOnServer := service.Hero{}
 	for i, hero := range m.heroes {
 		if hero.ID == h.ID {
 			oldPos = i
+			heroOnServer = hero
 			break
 		}
 	}
 
 	newHeroesSlice := append(m.heroes[:oldPos], m.heroes[oldPos+1:]...)
-	m.heroes = append(newHeroesSlice[:pos], append([]service.Hero{h}, newHeroesSlice[pos:]...)...)
+	m.heroes = append(newHeroesSlice[:pos], append([]service.Hero{heroOnServer}, newHeroesSlice[pos:]...)...)
 
 	//just for debugging and logging
 	for i, hero := range m.heroes {
@@ -133,4 +141,77 @@ func (m *MemService) Delete(c context.Context, id int64) (*service.Hero, error) 
 	}
 
 	return nil, service.ErrHeroNotFound
+}
+
+// CreateScoreMap to get the scores from 8a.nu
+func (m *MemService) CreateScoreMap(c context.Context) map[int64]int {
+	scoreMap := map[int64]int{}
+
+	for _, h := range m.heroes {
+		scoreMap[h.ID] = 0
+		if h.ScoreData.Name != "" {
+			url := fmt.Sprintf("https://www.8a.nu/%s/scorecard/ranking/?City=%s", h.ScoreData.Country, h.ScoreData.City)
+			score, err := getScore(url, h.ScoreData.Name)
+			if err == nil {
+				scoreMap[h.ID] = score
+			}
+		}
+	}
+
+	return scoreMap
+}
+
+func getScore(urlString string, name string) (int, error) {
+	// Make HTTP GET request
+	response, err := http.Get(urlString)
+	if err != nil {
+		return 0, err
+	}
+	defer response.Body.Close()
+
+	// Get the response body as a string
+	dataInBytes, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return 0, err
+	}
+
+	pageContent := string(dataInBytes)
+	if pageContent == "" {
+		return 0, service.ErrNoContent
+	}
+
+	// Find a substr
+	startIndex := strings.Index(pageContent, name)
+	if startIndex == -1 {
+		return 0, fmt.Errorf("Can not find %v on %v ", name, urlString)
+	}
+
+	subString := pageContent[startIndex:(startIndex + 200)]
+
+	// Find score
+	indexStart := strings.Index(subString, "\">")
+	indexEnd := strings.Index(subString, "</a>")
+
+	if indexStart == -1 || indexEnd == -1 {
+		return 0, fmt.Errorf("Can not find score for %v " + name)
+	}
+
+	return convertToNumber(subString[(indexStart + 2):indexEnd]), nil
+}
+
+func convertToNumber(s string) int {
+	re := regexp.MustCompile("[0-9]+")
+	scoreNumberArray := re.FindAllString(s, -1)
+
+	scoreNumberString := ""
+	for _, c := range scoreNumberArray {
+		scoreNumberString = scoreNumberString + c
+	}
+
+	nb, err := strconv.Atoi(scoreNumberString)
+	if err != nil {
+		return 0
+	}
+
+	return nb
 }

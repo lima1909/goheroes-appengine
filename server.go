@@ -59,6 +59,9 @@ func handler() http.Handler {
 		http.Error(w, "invalid method: "+r.Method, http.StatusBadRequest)
 	}).Methods("PUT", "POST", "PATH", "COPY", "HEAD", "LINK", "UNLINK", "PURGE", "LOCK", "UNLOCK", "VIEW", "PROPFIND")
 
+	urlWithScores := "/api/heroes/scores"
+	router.HandleFunc(urlWithScores, getScores).Methods("GET")
+
 	// TODO: not necessary anymore (only for the slash on the end)
 	router.HandleFunc("/api/heroes/", heroList)
 
@@ -79,6 +82,11 @@ func init() {
 	}
 
 	log.Println("Init is ready and start the server on: http://localhost:8080")
+}
+
+/** This is needed for tests */
+func resetMemService() {
+	app = service.NewApp(db.NewMemService())
 }
 
 func main() {
@@ -141,6 +149,18 @@ func infoPage(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "Err: %v\n", err)
 		return
 	}
+}
+
+func getScores(w http.ResponseWriter, r *http.Request) {
+	scoreMap := app.CreateScoreMap(appengine.NewContext(r))
+
+	b, err := json.Marshal(scoreMap)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Fprintf(w, "%s", b)
 }
 
 func heroList(w http.ResponseWriter, r *http.Request) {
