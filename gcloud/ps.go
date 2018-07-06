@@ -32,11 +32,11 @@ const (
 // HeroService wrapeer to HeroService
 // protocoll HeroService calls
 type HeroService struct {
-	hs service.HeroService
+	hs service.ProtocolHeroService
 }
 
 // NewHeroService create a new instance
-func NewHeroService(hs service.HeroService) *HeroService {
+func NewHeroService(hs service.ProtocolHeroService) *HeroService {
 	return &HeroService{hs: hs}
 }
 
@@ -88,6 +88,12 @@ func (hs HeroService) Delete(c context.Context, id int64) (*service.Hero, error)
 	h, err := hs.hs.Delete(c, id)
 	pub(c, service.NewProtocolf("Delete", id, "Delete Hero: %v with ID: %v", h, id))
 	return h, err
+}
+
+// CreateScoreMap to get the scores from 8a.nu
+func (hs *HeroService) CreateScoreMap(c context.Context) map[int64]int {
+	// pub(c, service.NewProtocolf("CreateScoreMap", 0, "CreateScoreMap from 8a.nu"))
+	return hs.CreateScoreMap(c)
 }
 
 func createSevice(c context.Context) (*pubsub.Service, error) {
