@@ -2,6 +2,8 @@ package db
 
 import (
 	"context"
+	"fmt"
+	"os"
 	"testing"
 
 	"github.com/lima1909/goheroes-appengine/service"
@@ -10,7 +12,15 @@ import (
 /** only run real tests agains 8a.nu from time to time and not automatically
 - you'll need a network connections
 - too much calls to 8a.nu can get us into trouble */
-var runTestsAgainst8anu = false
+var runTestsAgainst8anu bool
+
+func init() {
+	// to run tests against 8a.nu, you must set a Environment Variable: NU to any value
+	runTestsAgainst8anu = len(os.Getenv("NU")) > 0
+	if runTestsAgainst8anu {
+		fmt.Printf("\n-----> runTestsAgainst8anu is enabled: %v <-----\n\n", runTestsAgainst8anu)
+	}
+}
 
 func TestList(t *testing.T) {
 	m := NewMemService()
