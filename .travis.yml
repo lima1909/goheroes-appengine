@@ -26,11 +26,11 @@ before_script:
   #- go get -u cloud.google.com/go/...
   - go get -t ./...
   # https://github.com/golangci/golangci-lint
-  #- go get -u github.com/golangci/golangci-lint/cmd/golangci-lint
+  - go get -u github.com/golangci/golangci-lint/cmd/golangci-lint
 
 script:
   #- echo "current branch ${TRAVIS_BRANCH}"
-  - make test
+  - make test-full
 
 after_success:
   - echo "Jeh, I am done ... ;-)"

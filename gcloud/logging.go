@@ -23,6 +23,7 @@ func ShowLogs(c context.Context) []LogMessage {
 	}
 	log.Warningf(c, "---> LogMessageQuery: %v", query)
 
+	msg := make([]LogMessage, 0)
 	count := -1
 	for results := query.Run(c); ; {
 		count++
@@ -36,17 +37,15 @@ func ShowLogs(c context.Context) []LogMessage {
 			break
 		}
 
-		msg := make([]LogMessage, len(record.AppLogs))
-		for i, al := range record.AppLogs {
-			msg[i] = LogMessage{
+		for _, al := range record.AppLogs {
+			msg = append(msg, LogMessage{
 				Level:   al.Level,
 				Message: al.Message,
 				Time:    al.Time,
-			}
+			})
 		}
 		log.Infof(c, "Saw record %v", record)
-		return msg
 	}
 
-	return []LogMessage{}
+	return msg
 }

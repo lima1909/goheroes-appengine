@@ -209,7 +209,7 @@ func TestAddHeroHandlerCORS(t *testing.T) {
 
 	body, _ := ioutil.ReadAll(resp.Body)
 	strBody := string(body)
-	if strings.Contains(strBody, "Test") == false {
+	if !strings.Contains(strBody, "Test") {
 		t.Errorf("expect: Test in body, got: %v", strBody)
 	}
 
@@ -292,7 +292,7 @@ func TestUpdateHero(t *testing.T) {
 
 	body, _ := ioutil.ReadAll(resp.Body)
 	strBody := string(body)
-	if strings.Contains(strBody, "Test") == false {
+	if !strings.Contains(strBody, "Test") {
 		t.Errorf("expect: Test in body, got: %v", strBody)
 	}
 
@@ -378,7 +378,7 @@ func TestSwitchHero(t *testing.T) {
 
 	body, _ := ioutil.ReadAll(resp.Body)
 	strBody := string(body)
-	if strings.Contains(strBody, "Jasmin") == false {
+	if !strings.Contains(strBody, "Jasmin") {
 		t.Errorf("expect: Jasmin in body, got: %v", strBody)
 	}
 
@@ -405,7 +405,7 @@ func TestWriteHeroToClient(t *testing.T) {
 
 	body, _ := ioutil.ReadAll(w.Body)
 	strBody := string(body)
-	if strings.Contains(strBody, "Jasmin") == false {
+	if !strings.Contains(strBody, "Jasmin") {
 		t.Errorf("expect: Jasmin in body, got: %v", strBody)
 	}
 }

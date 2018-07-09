@@ -32,7 +32,7 @@ func NewMemService() *MemService {
 	}
 	maxID := int64(7)
 
-	return &MemService{heroes, maxID}
+	return &MemService{heroes: heroes, maxID: maxID}
 }
 
 // Protocols impl from ProtocolService

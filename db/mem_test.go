@@ -74,7 +74,7 @@ func TestAdd(t *testing.T) {
 
 func TestAddAndList(t *testing.T) {
 	m := NewMemService()
-	m.Add(context.TODO(), "Alex M")
+	_, _ = m.Add(context.TODO(), "Alex M")
 
 	fh, _ := m.List(context.TODO(), "Alex M")
 
@@ -87,7 +87,7 @@ func TestDelete(t *testing.T) {
 	m := NewMemService()
 	size := len(m.heroes)
 
-	m.Delete(context.TODO(), 1)
+	_, _ = m.Delete(context.TODO(), 1)
 	size = size - 1
 
 	//check if size is reduced
@@ -123,7 +123,7 @@ func TestAddAndGetAndDelete(t *testing.T) {
 	}
 
 	// Del
-	m.Delete(context.TODO(), newID)
+	_, _ = m.Delete(context.TODO(), newID)
 	size = size - 1
 	if len(m.heroes) != size {
 		t.Errorf("%v != %v", len(m.heroes), size)
@@ -149,9 +149,9 @@ func TestUpdate(t *testing.T) {
 
 func TestAddAndSearch(t *testing.T) {
 	m := NewMemService()
-	m.Add(context.TODO(), "Abc")
-	m.Add(context.TODO(), "Abcd")
-	m.Add(context.TODO(), "Abcde")
+	_, _ = m.Add(context.TODO(), "Abc")
+	_, _ = m.Add(context.TODO(), "Abcd")
+	_, _ = m.Add(context.TODO(), "Abcde")
 
 	fh, _ := m.List(context.TODO(), "abc")
 	if 3 != len(fh) {
