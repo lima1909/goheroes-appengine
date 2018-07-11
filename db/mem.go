@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/lima1909/goheroes-appengine/service"
 )
@@ -37,10 +38,20 @@ func NewMemService() *MemService {
 
 // Protocols impl from ProtocolService
 func (MemService) Protocols(c context.Context) ([]service.Protocol, error) {
-	return []service.Protocol{
-		service.NewProtocolf("Add", 1, "add new Hero with ID: 1"),
-		service.NewProtocolf("List", 0, "List from Heroes with len: 5"),
-	}, nil
+	t := time.Now()
+
+	dummyProtocols := make([]service.Protocol, 8)
+
+	dummyProtocols[0] = service.NewProtocolf("Add", 1, "add new Hero with ID: 1")
+	dummyProtocols[1] = service.NewProtocolf("List", 0, "List from Heroes with len: 5")
+	dummyProtocols[2] = service.Protocol{Action: "Delete", HeroID: 2, Note: "delete Hero with ID: 2", Time: t.Add(time.Duration(-10) * time.Minute)}
+	dummyProtocols[3] = service.Protocol{Action: "Search", HeroID: 0, Note: "search list", Time: t.Add(time.Duration(-7) * time.Hour)}
+	dummyProtocols[4] = service.Protocol{Action: "Add", HeroID: 5, Note: "add Hero with ID: 5", Time: t.Add(time.Duration(-170) * time.Second)}
+	dummyProtocols[5] = service.Protocol{Action: "List", HeroID: 0, Note: "List from Heroes", Time: t.AddDate(0, 0, -1)}
+	dummyProtocols[6] = service.Protocol{Action: "Delete", HeroID: 23, Note: "delete Hero with ID: 23", Time: t.AddDate(0, -2, 0)}
+	dummyProtocols[7] = service.Protocol{Action: "Search", HeroID: 0, Note: "search list", Time: t.AddDate(-3, 0, 0)}
+
+	return dummyProtocols, nil
 }
 
 // List all Heroes, there are saved in the heroes array
