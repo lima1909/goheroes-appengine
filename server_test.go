@@ -342,7 +342,7 @@ func TestGetHeroFromServiceFail(t *testing.T) {
 
 func TestSwitchHero(t *testing.T) {
 	// reset MemService
-	app = service.NewApp(db.NewMemService())
+	app.ProtocolHeroService = db.NewMemService()
 
 	req, err := http.NewRequest("PUT",
 		fmt.Sprintf("%s/api/heroes?pos=4", server.URL),

@@ -7,19 +7,56 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
+	"reflect"
 	"strconv"
+	"time"
 
+	"github.com/lima1909/goheroes-appengine/db"
 	"github.com/lima1909/goheroes-appengine/gcloud"
 
 	"github.com/gorilla/mux"
-	"github.com/lima1909/goheroes-appengine/db"
 	"github.com/lima1909/goheroes-appengine/service"
 
 	"google.golang.org/appengine"
 	loga "google.golang.org/appengine/log"
 )
 
-var app *service.App
+// initilalise the App with all service in the right environment
+var app = NewApp()
+
+// App is the Entrypoint
+type App struct {
+	service.ProtocolHeroService
+
+	// Info to the current system
+	HeroesServiceStr string
+	RunInCloud       bool
+	AppIsStarted     string
+}
+
+// NewApp create a new App instance
+func NewApp() *App {
+	var svc service.ProtocolHeroService = db.NewMemService()
+	// if run in cloud, than replace the service
+	if RunInCloud() {
+		svc = gcloud.NewHeroService(db.NewMemService())
+	}
+
+	return &App{
+		ProtocolHeroService: svc,
+
+		HeroesServiceStr: reflect.TypeOf(svc).String(),
+		RunInCloud:       RunInCloud(),
+		AppIsStarted:     time.Now().Local().Format("2006.01.02 15:04:05"),
+	}
+}
+
+// RunInCloud check Env: RUN_IN_CLOUD is set tue true
+func RunInCloud() bool {
+	inCloud, _ := strconv.ParseBool(os.Getenv("RUN_IN_CLOUD"))
+	return inCloud
+}
 
 // handle CORS and the OPION method
 func corsAndOptionHandler(h http.Handler) http.HandlerFunc {
@@ -74,13 +111,6 @@ func handler() http.Handler {
 
 func init() {
 	http.Handle("/", handler())
-
-	if service.RunInCloud() {
-		app = service.NewApp(gcloud.NewHeroService(db.NewMemService()))
-	} else {
-		app = service.NewApp(db.NewMemService())
-	}
-
 	log.Println("Init is ready and start the server on: http://localhost:8080")
 }
 
@@ -105,7 +135,7 @@ func protocol(w http.ResponseWriter, r *http.Request) {
 }
 
 func subscribeAndStore(w http.ResponseWriter, r *http.Request) {
-	if service.RunInCloud() {
+	if RunInCloud() {
 		c := appengine.NewContext(r)
 
 		protocols, err := gcloud.Sub(c)
