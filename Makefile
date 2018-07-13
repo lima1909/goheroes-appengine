@@ -42,8 +42,6 @@ endpoint:
 prepare:
 	@echo "-->" $(shell go version)
 	go get -t ./...
-  # https://github.com/golangci/golangci-lint
-	go get -u github.com/golangci/golangci-lint/cmd/golangci-lint
 
 test:
 	go tool vet .
@@ -52,4 +50,6 @@ test:
 test-full:
 	go tool vet .
 	NU=TRUE go test -race -count=1  ./...
+  # https://github.com/golangci/golangci-lint
+	go get -u github.com/golangci/golangci-lint/cmd/golangci-lint
 	golangci-lint run ./...
