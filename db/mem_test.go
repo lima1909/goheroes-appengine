@@ -6,6 +6,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/lima1909/goheroes-appengine/gcloud"
 	"github.com/lima1909/goheroes-appengine/service"
 )
 
@@ -232,7 +233,11 @@ func TestGetScore(t *testing.T) {
 		urlString := "https://www.8a.nu/de/scorecard/ranking/?City=Nuremberg"
 		name := "jasmin-roeper"
 
-		score, err := getScore(urlString, name)
+		pageContent, err := gcloud.GetBodyContent(context.TODO(), urlString)
+		if err != nil {
+			t.Errorf("no err expected: %v", err)
+		}
+		score, err := getScore(pageContent, name)
 		if err != nil {
 			t.Errorf("no err expected: %v", err)
 		}
@@ -243,10 +248,7 @@ func TestGetScore(t *testing.T) {
 }
 
 func TestGetScoreWrongURL(t *testing.T) {
-	urlString := "https://wrongURL.com"
-	name := "jasmin-roeper"
-
-	_, err := getScore(urlString, name)
+	_, err := gcloud.GetBodyContent(context.TODO(), "https://wrongURL.com")
 	if err == nil {
 		t.Errorf("Should throw an Error because of wrong URL")
 	}
@@ -256,7 +258,11 @@ func TestGetScoreWrongName(t *testing.T) {
 		urlString := "https://www.8a.nu/de/scorecard/ranking/?City=Nuremberg"
 		name := "jasmin-test"
 
-		_, err := getScore(urlString, name)
+		pageContent, err := gcloud.GetBodyContent(context.TODO(), urlString)
+		if err != nil {
+			t.Errorf("no err expected: %v", err)
+		}
+		_, err = getScore(pageContent, name)
 		if err == nil {
 			t.Errorf("Should throw an Error because of wrong name")
 		}
@@ -268,7 +274,7 @@ func TestCreateScoreMap(t *testing.T) {
 	m := NewMemService()
 
 	if runTestsAgainst8anu {
-		scores := m.CreateScoreMap(context.TODO())
+		scores, _ := m.CreateScoreMap(context.TODO())
 
 		if scores[1] <= 0 {
 			t.Errorf("Expected a score of over 0 for 1. Hero; got %v ", scores[1])

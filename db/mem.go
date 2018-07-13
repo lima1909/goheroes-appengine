@@ -3,14 +3,13 @@ package db
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"log"
-	"net/http"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/lima1909/goheroes-appengine/gcloud"
 	"github.com/lima1909/goheroes-appengine/service"
 )
 
@@ -155,46 +154,34 @@ func (m *MemService) Delete(c context.Context, id int64) (*service.Hero, error) 
 }
 
 // CreateScoreMap to get the scores from 8a.nu
-func (m *MemService) CreateScoreMap(c context.Context) map[int64]int {
+func (m *MemService) CreateScoreMap(c context.Context) (map[int64]int, error) {
 	scoreMap := map[int64]int{}
 
 	for _, h := range m.heroes {
 		scoreMap[h.ID] = 0
 		if h.ScoreData.Name != "" {
 			url := fmt.Sprintf("https://www.8a.nu/%s/scorecard/ranking/?City=%s", h.ScoreData.Country, h.ScoreData.City)
-			score, err := getScore(url, h.ScoreData.Name)
+			pageContent, err := gcloud.GetBodyContent(c, url)
+			if err != nil {
+				return scoreMap, err
+			}
+
+			score, err := getScore(pageContent, h.ScoreData.Name)
 			if err == nil {
 				scoreMap[h.ID] = score
 			}
 		}
 	}
 
-	return scoreMap
+	return scoreMap, nil
 }
 
-func getScore(urlString string, name string) (int, error) {
-	// Make HTTP GET request
-	response, err := http.Get(urlString)
-	if err != nil {
-		return 0, err
-	}
-	defer response.Body.Close()
-
-	// Get the response body as a string
-	dataInBytes, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		return 0, err
-	}
-
-	pageContent := string(dataInBytes)
-	if pageContent == "" {
-		return 0, service.ErrNoContent
-	}
+func getScore(pageContent, name string) (int, error) {
 
 	// Find a substr
 	startIndex := strings.Index(pageContent, name)
 	if startIndex == -1 {
-		return 0, fmt.Errorf("Can not find %v on %v ", name, urlString)
+		return 0, fmt.Errorf("Can not find %v ", name)
 	}
 
 	subString := pageContent[startIndex:(startIndex + 200)]

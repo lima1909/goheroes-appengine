@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
 	"reflect"
 	"strconv"
 	"time"
@@ -39,7 +38,7 @@ type App struct {
 func NewApp() *App {
 	var svc service.ProtocolHeroService = db.NewMemService()
 	// if run in cloud, than replace the service
-	if RunInCloud() {
+	if service.RunInCloud() {
 		svc = gcloud.NewHeroService(db.NewMemService())
 	}
 
@@ -47,15 +46,9 @@ func NewApp() *App {
 		ProtocolHeroService: svc,
 
 		HeroesServiceStr: reflect.TypeOf(svc).String(),
-		RunInCloud:       RunInCloud(),
+		RunInCloud:       service.RunInCloud(),
 		AppIsStarted:     time.Now().Local().Format("2006.01.02 15:04:05"),
 	}
-}
-
-// RunInCloud check Env: RUN_IN_CLOUD is set tue true
-func RunInCloud() bool {
-	inCloud, _ := strconv.ParseBool(os.Getenv("RUN_IN_CLOUD"))
-	return inCloud
 }
 
 // handle CORS and the OPION method
@@ -135,7 +128,7 @@ func protocol(w http.ResponseWriter, r *http.Request) {
 }
 
 func subscribeAndStore(w http.ResponseWriter, r *http.Request) {
-	if RunInCloud() {
+	if service.RunInCloud() {
 		c := appengine.NewContext(r)
 
 		protocols, err := gcloud.Sub(c)
@@ -177,7 +170,11 @@ func infoPage(w http.ResponseWriter, r *http.Request) {
 }
 
 func getScores(w http.ResponseWriter, r *http.Request) {
-	scoreMap := app.CreateScoreMap(appengine.NewContext(r))
+	scoreMap, err := app.CreateScoreMap(appengine.NewContext(r))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	b, err := json.Marshal(scoreMap)
 	if err != nil {

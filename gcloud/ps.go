@@ -91,7 +91,7 @@ func (hs HeroService) Delete(c context.Context, id int64) (*service.Hero, error)
 }
 
 // CreateScoreMap to get the scores from 8a.nu
-func (hs *HeroService) CreateScoreMap(c context.Context) map[int64]int {
+func (hs *HeroService) CreateScoreMap(c context.Context) (map[int64]int, error) {
 	// pub(c, service.NewProtocolf("CreateScoreMap", 0, "CreateScoreMap from 8a.nu"))
 	return hs.hs.CreateScoreMap(c)
 }

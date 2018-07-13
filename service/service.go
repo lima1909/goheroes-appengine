@@ -4,6 +4,8 @@ package service
 import (
 	"context"
 	"errors"
+	"os"
+	"strconv"
 )
 
 var (
@@ -37,7 +39,7 @@ type HeroService interface {
 	Update(c context.Context, h Hero) (*Hero, error)
 	UpdatePosition(c context.Context, h Hero, pos int64) (*Hero, error)
 	Delete(c context.Context, id int64) (*Hero, error)
-	CreateScoreMap(c context.Context) map[int64]int
+	CreateScoreMap(c context.Context) (map[int64]int, error)
 }
 
 // ProtocolService acces to the Protocols
@@ -49,4 +51,10 @@ type ProtocolService interface {
 type ProtocolHeroService interface {
 	HeroService
 	ProtocolService
+}
+
+// RunInCloud check Env: RUN_IN_CLOUD is set tue true
+func RunInCloud() bool {
+	inCloud, _ := strconv.ParseBool(os.Getenv("RUN_IN_CLOUD"))
+	return inCloud
 }
