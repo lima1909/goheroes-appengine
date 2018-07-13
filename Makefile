@@ -39,6 +39,12 @@ endpoint:
 	$(GCLOUD_CMD) endpoints services list
 	$(GCLOUD_CMD) endpoints services deploy swagger.yaml
 
+prepare:
+	@echo "-->" $(shell go version)
+	go get -t ./...
+  # https://github.com/golangci/golangci-lint
+	go get -u github.com/golangci/golangci-lint/cmd/golangci-lint
+
 test:
 	go tool vet .
 	go test -race -count=1  ./...

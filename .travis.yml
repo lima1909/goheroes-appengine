@@ -22,11 +22,7 @@ jobs:
 # definition for the build starts her:
 # ------------------------------------
 before_script:
-  #- go get google.golang.org/api/pubsub/v1
-  #- go get -u cloud.google.com/go/...
-  - go get -t ./...
-  # https://github.com/golangci/golangci-lint
-  - go get -u github.com/golangci/golangci-lint/cmd/golangci-lint
+  - make prepare
 
 script:
   #- echo "current branch ${TRAVIS_BRANCH}"
