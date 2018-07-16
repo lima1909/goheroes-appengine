@@ -39,7 +39,6 @@ type HeroService interface {
 	Update(c context.Context, h Hero) (*Hero, error)
 	UpdatePosition(c context.Context, h Hero, pos int64) (*Hero, error)
 	Delete(c context.Context, id int64) (*Hero, error)
-	CreateScoreMap(c context.Context) (map[int64]int, error)
 }
 
 // ProtocolService acces to the Protocols
@@ -51,6 +50,11 @@ type ProtocolService interface {
 type ProtocolHeroService interface {
 	HeroService
 	ProtocolService
+}
+
+// ScoreService get Score from Hero-List from 8a.nu
+type ScoreService interface {
+	Scores(c context.Context, svc HeroService) (map[int64]int, error)
 }
 
 // RunInCloud check Env: RUN_IN_CLOUD is set tue true

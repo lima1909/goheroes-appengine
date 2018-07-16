@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -13,12 +14,14 @@ import (
 
 	"github.com/lima1909/goheroes-appengine/db"
 	"github.com/lima1909/goheroes-appengine/gcloud"
+	"github.com/lima1909/goheroes-appengine/score"
 
 	"github.com/gorilla/mux"
 	"github.com/lima1909/goheroes-appengine/service"
 
 	"google.golang.org/appengine"
 	loga "google.golang.org/appengine/log"
+	"google.golang.org/appengine/urlfetch"
 )
 
 // initilalise the App with all service in the right environment
@@ -27,6 +30,7 @@ var app = NewApp()
 // App is the Entrypoint
 type App struct {
 	service.ProtocolHeroService
+	service.ScoreService
 
 	// Info to the current system
 	HeroesServiceStr string
@@ -37,13 +41,19 @@ type App struct {
 // NewApp create a new App instance
 func NewApp() *App {
 	var svc service.ProtocolHeroService = db.NewMemService()
+	var scoreSvc = score.Default()
+
 	// if run in cloud, than replace the service
 	if service.RunInCloud() {
 		svc = gcloud.NewHeroService(db.NewMemService())
+		scoreSvc = score.New(func(c context.Context) *http.Client {
+			return urlfetch.Client(c)
+		})
 	}
 
 	return &App{
 		ProtocolHeroService: svc,
+		ScoreService:        scoreSvc,
 
 		HeroesServiceStr: reflect.TypeOf(svc).String(),
 		RunInCloud:       service.RunInCloud(),
@@ -170,7 +180,7 @@ func infoPage(w http.ResponseWriter, r *http.Request) {
 }
 
 func getScores(w http.ResponseWriter, r *http.Request) {
-	scoreMap, err := app.CreateScoreMap(appengine.NewContext(r))
+	scoreMap, err := app.Scores(appengine.NewContext(r), app.ProtocolHeroService)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

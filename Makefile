@@ -1,6 +1,7 @@
 SHELL := /bin/bash
 OS := $(shell uname)
 GCLOUD_CMD = gcloud.cmd
+BRANCH := $(shell git branch 2>/dev/null  | grep '*' | sed 's/* \(.*\)/(\1)/')
 
 ifeq ($(OS), Linux)
   GCLOUD_CMD = gcloud 
@@ -9,6 +10,8 @@ else
   $(info --> OS: $(OS) with CMD: $(GCLOUD_CMD))
 endif
 
+branch:
+	$(info --> BRANCH:  $(BRANCH))
 
 deploy: 
 	$(GCLOUD_CMD) app deploy app.yaml cron.yaml -q

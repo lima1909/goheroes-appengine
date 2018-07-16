@@ -2,14 +2,10 @@ package db
 
 import (
 	"context"
-	"fmt"
 	"log"
-	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
-	"github.com/lima1909/goheroes-appengine/gcloud"
 	"github.com/lima1909/goheroes-appengine/service"
 )
 
@@ -151,65 +147,4 @@ func (m *MemService) Delete(c context.Context, id int64) (*service.Hero, error) 
 	}
 
 	return nil, service.ErrHeroNotFound
-}
-
-// CreateScoreMap to get the scores from 8a.nu
-func (m *MemService) CreateScoreMap(c context.Context) (map[int64]int, error) {
-	scoreMap := map[int64]int{}
-
-	for _, h := range m.heroes {
-		scoreMap[h.ID] = 0
-		if h.ScoreData.Name != "" {
-			url := fmt.Sprintf("https://www.8a.nu/%s/scorecard/ranking/?City=%s", h.ScoreData.Country, h.ScoreData.City)
-			pageContent, err := gcloud.GetBodyContent(c, url)
-			if err != nil {
-				return scoreMap, err
-			}
-
-			score, err := getScore(pageContent, h.ScoreData.Name)
-			if err == nil {
-				scoreMap[h.ID] = score
-			}
-		}
-	}
-
-	return scoreMap, nil
-}
-
-func getScore(pageContent, name string) (int, error) {
-
-	// Find a substr
-	startIndex := strings.Index(pageContent, name)
-	if startIndex == -1 {
-		return 0, fmt.Errorf("Can not find %v ", name)
-	}
-
-	subString := pageContent[startIndex:(startIndex + 200)]
-
-	// Find score
-	indexStart := strings.Index(subString, "\">")
-	indexEnd := strings.Index(subString, "</a>")
-
-	if indexStart == -1 || indexEnd == -1 {
-		return 0, fmt.Errorf("Can not find score for %v " + name)
-	}
-
-	return convertToNumber(subString[(indexStart + 2):indexEnd]), nil
-}
-
-func convertToNumber(s string) int {
-	re := regexp.MustCompile("[0-9]+")
-	scoreNumberArray := re.FindAllString(s, -1)
-
-	scoreNumberString := ""
-	for _, c := range scoreNumberArray {
-		scoreNumberString = scoreNumberString + c
-	}
-
-	nb, err := strconv.Atoi(scoreNumberString)
-	if err != nil {
-		return 0
-	}
-
-	return nb
 }

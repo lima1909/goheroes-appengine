@@ -90,12 +90,6 @@ func (hs HeroService) Delete(c context.Context, id int64) (*service.Hero, error)
 	return h, err
 }
 
-// CreateScoreMap to get the scores from 8a.nu
-func (hs *HeroService) CreateScoreMap(c context.Context) (map[int64]int, error) {
-	// pub(c, service.NewProtocolf("CreateScoreMap", 0, "CreateScoreMap from 8a.nu"))
-	return hs.hs.CreateScoreMap(c)
-}
-
 func createSevice(c context.Context) (*pubsub.Service, error) {
 	hc, err := google.DefaultClient(c, pubsub.PubsubScope)
 	if err != nil {
