@@ -70,6 +70,10 @@ func corsAndOptionHandler(h http.Handler) http.HandlerFunc {
 func handler() http.Handler {
 	router := mux.NewRouter()
 
+	// oauth2
+	router.Methods("GET").Path("/login").Handler(gcloud.AppHandler(gcloud.LoginHandler))
+	router.Methods("GET").Path("/oauth2callback").Handler(gcloud.AppHandler(gcloud.OauthCallbackHandler))
+
 	router.Handle("/", http.RedirectHandler("/info", http.StatusFound))
 	router.HandleFunc("/info", infoPage)
 
