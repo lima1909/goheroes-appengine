@@ -4,11 +4,11 @@ import (
 	"context"
 	"encoding/gob"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 
 	"github.com/gorilla/sessions"
+	"github.com/lima1909/goheroes-appengine/com"
 	"github.com/lima1909/goheroes-appengine/service"
 	uuid "github.com/satori/go.uuid"
 	"golang.org/x/oauth2"
@@ -68,17 +68,17 @@ func configureOAuthClient(clientID, clientSecret string) *oauth2.Config {
 }
 
 // LoginHandler initiates an OAuth flow to authenticate the user.
-func LoginHandler(w http.ResponseWriter, r *http.Request) *AppError {
+func LoginHandler(w http.ResponseWriter, r *http.Request) *com.Error {
 	state := uuid.Must(uuid.NewV4()).String()
 
 	// create a new session, to save the state
 	// this is importend, the callback will check this state
 	sessn, err := sessionStore.New(r, state)
 	if err != nil {
-		return AppErrorf(err, "could not create oauth session: %v", err)
+		return com.Errorf(err, "could not create oauth session: %v", err)
 	}
 	if err := sessn.Save(r, w); err != nil {
-		return AppErrorf(err, "could not save session: %v", err)
+		return com.Errorf(err, "could not save session: %v", err)
 	}
 
 	// Use the session ID for the "state" parameter.
@@ -92,32 +92,32 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) *AppError {
 
 // OauthCallbackHandler completes the OAuth flow, retreives the user's profile
 // information and stores it in a session.
-func OauthCallbackHandler(w http.ResponseWriter, r *http.Request) *AppError {
+func OauthCallbackHandler(w http.ResponseWriter, r *http.Request) *com.Error {
 	// check, whether a session with the state from login (uuid) exist
 	session, err := sessionStore.Get(r, r.FormValue("state"))
 	if err != nil {
-		return AppErrorf(err, "invalid state parameter. try logging in again.")
+		return com.Errorf(err, "invalid state parameter. try logging in again.")
 	}
 
 	session, err = sessionStore.New(r, sessionDefaultID)
 	if err != nil {
-		return AppErrorf(err, "could not create new user session: %v", err)
+		return com.Errorf(err, "could not create new user session: %v", err)
 	}
 
 	tok, err := oauth2Config.Exchange(context.Background(), r.FormValue("code"))
 	if err != nil {
-		return AppErrorf(err, "could not get auth token: %v", err)
+		return com.Errorf(err, "could not get auth token: %v", err)
 	}
 	session.Values[sessionOauthTokenKey] = tok
 
 	user, err := fetchUser(context.Background(), tok)
 	if err != nil {
-		return AppErrorf(err, "could not fetch Google profile: %v", err)
+		return com.Errorf(err, "could not fetch Google profile: %v", err)
 	}
 	session.Values[sessionUserKey] = user
 
 	if err := session.Save(r, w); err != nil {
-		return AppErrorf(err, "could not save session: %v", err)
+		return com.Errorf(err, "could not save session: %v", err)
 	}
 
 	http.Redirect(w, r, "/", http.StatusFound)
@@ -155,34 +155,5 @@ func GetUser(r *http.Request) (service.User, error) {
 
 	}
 
-	user := u.(*service.User)
-	return *user, nil
-}
-
-// AppHandler http://blog.golang.org/error-handling-and-go
-type AppHandler func(http.ResponseWriter, *http.Request) *AppError
-
-// AppError ...
-type AppError struct {
-	Error   error
-	Message string
-	Code    int
-}
-
-func (fn AppHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if e := fn(w, r); e != nil { // e is *appError, not os.Error.
-		log.Printf("Handler error: status code: %d, message: %s, underlying err: %#v",
-			e.Code, e.Message, e.Error)
-
-		http.Error(w, e.Message, e.Code)
-	}
-}
-
-// AppErrorf ...
-func AppErrorf(err error, format string, v ...interface{}) *AppError {
-	return &AppError{
-		Error:   err,
-		Message: fmt.Sprintf(format, v...),
-		Code:    500,
-	}
+	return *u.(*service.User), nil
 }

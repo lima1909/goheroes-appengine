@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/lima1909/goheroes-appengine/com"
 	"github.com/lima1909/goheroes-appengine/db"
 	"github.com/lima1909/goheroes-appengine/gcloud"
 
@@ -73,8 +74,8 @@ func handler() http.Handler {
 	router := mux.NewRouter()
 
 	// oauth2
-	router.Methods("GET").Path("/login").Handler(gcloud.AppHandler(gcloud.LoginHandler))
-	router.Methods("GET").Path("/oauth2callback").Handler(gcloud.AppHandler(gcloud.OauthCallbackHandler))
+	router.Methods("GET").Path("/login").Handler(com.Handler(gcloud.LoginHandler))
+	router.Methods("GET").Path("/oauth2callback").Handler(com.Handler(gcloud.OauthCallbackHandler))
 
 	router.Handle("/", http.RedirectHandler("/info", http.StatusFound))
 	router.HandleFunc("/info", infoPage)
