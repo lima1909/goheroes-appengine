@@ -26,7 +26,7 @@ before_script:
 
 script:
   #- echo "current branch ${TRAVIS_BRANCH}"
-  - make test
+  - make test-full
 
 after_success:
   - echo "Jeh, I am done ... ;-)"

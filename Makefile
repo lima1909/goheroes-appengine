@@ -1,6 +1,7 @@
 SHELL := /bin/bash
 OS := $(shell uname)
 GCLOUD_CMD = gcloud.cmd
+PWD := $(shell pwd)
 
 ifeq ($(OS), Linux)
   GCLOUD_CMD = gcloud 
@@ -52,4 +53,9 @@ test-full:
 	NU=TRUE go test -race -count=1  ./...
   # https://github.com/golangci/golangci-lint
 	go get -u github.com/golangci/golangci-lint/cmd/golangci-lint
-	golangci-lint run ./...
+	golangci-lint run  --disable=megacheck ./...
+
+test-docker:
+	@docker run --rm -it -v $(PWD):/go/src/github.com/lima1909/goheroes-appengine \
+															-w /go/src/github.com/lima1909/goheroes-appengine \
+															golang:1.10 make prepare && make test-full
