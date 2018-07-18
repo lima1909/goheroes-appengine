@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 
 	"github.com/gorilla/sessions"
 	uuid "github.com/satori/go.uuid"
@@ -29,7 +30,7 @@ const (
 	//  session, _ := bookshelf.SessionStore.New(r, defaultSessionID)
 	//  session.Values[oauthTokenSessionKey]
 	googleProfileSessionKey = "google_profile"
-	oauthTokenSessionKey    = "oauth_token"
+	oauthTokenSessionKey    = "oauthtoken"
 )
 
 var (
@@ -46,7 +47,7 @@ func init() {
 	}
 	sessionStore = cookieStore
 
-	oauth2Config = configureOAuthClient("", "")
+	oauth2Config = configureOAuthClient(os.Getenv("CLIENT_ID"), os.Getenv("CLIENT_KEY"))
 
 	// Gob encoding for gorilla/sessions
 	gob.Register(&oauth2.Token{})
