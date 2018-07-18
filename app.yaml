@@ -16,3 +16,4 @@ handlers:
 
 env_variables:
   RUN_IN_CLOUD: 'TRUE'
+  OAUTH_REDIRECT_URL: 'https://goheros-207118.appspot.com/oauth2callback'

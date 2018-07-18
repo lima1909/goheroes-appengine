@@ -58,3 +58,8 @@ func RunInCloud() bool {
 	inCloud, _ := strconv.ParseBool(os.Getenv("RUN_IN_CLOUD"))
 	return inCloud
 }
+
+// User if login, than a User object created and filed in the session
+type User struct {
+	ID, DisplayName, ImageURL string
+}

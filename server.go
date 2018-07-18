@@ -32,6 +32,7 @@ type App struct {
 	HeroesServiceStr string
 	RunInCloud       bool
 	AppIsStarted     string
+	UserName         string
 }
 
 // NewApp create a new App instance
@@ -47,6 +48,7 @@ func NewApp() *App {
 
 		HeroesServiceStr: reflect.TypeOf(svc).String(),
 		RunInCloud:       service.RunInCloud(),
+		UserName:         "NoUser",
 		AppIsStarted:     time.Now().Local().Format("2006.01.02 15:04:05"),
 	}
 }
@@ -164,6 +166,11 @@ func infoPage(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Fprintf(w, "Err: %v\n", err)
 		return
+	}
+
+	user, err := gcloud.GetUser(r)
+	if err == nil {
+		app.UserName = user.DisplayName
 	}
 
 	err = t.Execute(w, app)
