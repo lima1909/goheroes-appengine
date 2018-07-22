@@ -4,8 +4,12 @@ import (
 	"context"
 	"encoding/gob"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
+	"sync"
+
+	"google.golang.org/appengine"
 
 	"github.com/gorilla/sessions"
 	"github.com/lima1909/goheroes-appengine/com"
@@ -14,6 +18,7 @@ import (
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	plus "google.golang.org/api/plus/v1"
+	loga "google.golang.org/appengine/log"
 )
 
 // Doc:
@@ -32,24 +37,40 @@ const (
 var (
 	oauth2Config *oauth2.Config
 	sessionStore sessions.Store
+	once         sync.Once
 )
 
 func init() {
 	// Configure storage method for session-wide information.
 	// Update "something-very-secret" with a hard to guess string or byte sequence.
-	cookieStore := sessions.NewCookieStore([]byte("something-very-secret"))
+	secret := uuid.Must(uuid.NewV4()).String()
+	cookieStore := sessions.NewCookieStore([]byte(secret))
 	cookieStore.Options = &sessions.Options{
 		HttpOnly: true,
 		MaxAge:   1 * 60, // 1 minute
 	}
 	sessionStore = cookieStore
 
-	oauth2Config = configureOAuthClient(os.Getenv("CLIENT_ID"), os.Getenv("CLIENT_KEY"))
-
 	// Gob encoding for gorilla/sessions
 	gob.Register(&oauth2.Token{})
 	gob.Register(&service.User{})
 
+}
+
+// load ClientID and ClientKey from Environment or from Datastore
+func getCliendIDandClientKey(ctx context.Context) (clientID, clientKey string, err error) {
+	clientID = os.Getenv("CLIENT_ID")
+	clientKey = os.Getenv("CLIENT_KEY")
+	if clientID == "" || clientKey == "" {
+		log.Println("Env-Var: CLIENT_ID and CLIENT_KEY are not set")
+		log.Println("try to load from Datastore")
+		clientID, clientKey, err = OAuth(ctx)
+		if err != nil {
+			loga.Errorf(ctx, "Can not load OAuth-Data (ClientID and ClientKey): %v", err)
+			return
+		}
+	}
+	return
 }
 
 func configureOAuthClient(clientID, clientSecret string) *oauth2.Config {
@@ -69,6 +90,19 @@ func configureOAuthClient(clientID, clientSecret string) *oauth2.Config {
 
 // LoginHandler initiates an OAuth flow to authenticate the user.
 func LoginHandler(w http.ResponseWriter, r *http.Request) *com.Error {
+	var err error
+	once.Do(func() {
+		var id, key string
+		id, key, err = getCliendIDandClientKey(appengine.NewContext(r))
+		if err != nil {
+			return
+		}
+		oauth2Config = configureOAuthClient(id, key)
+	})
+	if err != nil {
+		return com.Errorf(err, "could not create oauth config: %v", err)
+	}
+
 	state := uuid.Must(uuid.NewV4()).String()
 
 	// create a new session, to save the state
@@ -104,13 +138,14 @@ func OauthCallbackHandler(w http.ResponseWriter, r *http.Request) *com.Error {
 		return com.Errorf(err, "could not create new user session: %v", err)
 	}
 
-	tok, err := oauth2Config.Exchange(context.Background(), r.FormValue("code"))
+	ctx := appengine.NewContext(r)
+	tok, err := oauth2Config.Exchange(ctx, r.FormValue("code"))
 	if err != nil {
 		return com.Errorf(err, "could not get auth token: %v", err)
 	}
 	session.Values[sessionOauthTokenKey] = tok
 
-	user, err := fetchUser(context.Background(), tok)
+	user, err := fetchUser(ctx, tok)
 	if err != nil {
 		return com.Errorf(err, "could not fetch Google profile: %v", err)
 	}

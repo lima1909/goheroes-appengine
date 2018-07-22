@@ -171,7 +171,7 @@ func infoPage(w http.ResponseWriter, r *http.Request) {
 
 	user, err := gcloud.GetUser(r)
 	if err == nil {
-		app.UserName = user.DisplayName
+		app.UserName = user.DisplayName + " (" + user.ID + ")"
 	}
 
 	err = t.Execute(w, app)

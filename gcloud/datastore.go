@@ -17,6 +17,21 @@ const (
 	KIND = "Protocol"
 )
 
+// OAuth get ClientID and ClientKey from Datastore
+func OAuth(c context.Context) (clientID, clientKey string, err error) {
+	c = setNamespace(c)
+	q := datastore.NewQuery("OAuth").Filter("Name =", "GoHeroWebclient")
+
+	type Client struct{ ClientID, ClientKey, Name string }
+	cls := []Client{}
+	_, err = q.GetAll(c, &cls)
+	if err != nil {
+		return "", "", fmt.Errorf("Err by datastore.OAuth: %v", err)
+	}
+
+	return cls[0].ClientID, cls[0].ClientKey, nil
+}
+
 // ProtocolsFromDatastore List all Protocol, there are saved in datastore
 func ProtocolsFromDatastore(c context.Context) ([]service.Protocol, error) {
 	c = setNamespace(c)
