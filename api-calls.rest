@@ -1,0 +1,24 @@
+# Doku: https://marketplace.visualstudio.com/items?itemName=humao.rest-client
+
+@host = goheros-207118.appspot.com
+
+### get all heroes
+GET https://{{host}}/api/heroes
+
+### get hero by ID
+GET https://{{host}}/api/heroes/1
+
+### show protocoll
+GET https://{{host}}/api/heroes/protocol
+
+### show score from 8a.nu
+GET https://{{host}}/api/heroes/scores
+
+### create a new Hero (context contains the new name)
+POST https://{{host}}/api/heroes
+Content-Type: text/plain
+
+New Foo-Bar2
+
+### delete hero with ID
+DELETE https://{{host}}/api/heroes/11
